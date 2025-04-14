@@ -6,8 +6,8 @@ package com.example.checkers.game;
  * @author Ramiar Odendaal
  */
 public class MoveAction {
-    public int from;
-    public int to;
+    public final int from;
+    public final int to;
     public MoveAction(int from, int to){
        this.from = from;
        this.to = to;

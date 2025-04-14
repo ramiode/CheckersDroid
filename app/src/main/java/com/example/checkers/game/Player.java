@@ -19,6 +19,8 @@ public abstract class Player {
     private String color;
     private List<Stone> stones;
 
+    private volatile Stone currentlySelectedStone;
+
     /**
      * Constructor for abstract player.
      *
@@ -77,5 +79,13 @@ public abstract class Player {
     public abstract boolean isHuman();
     public void setNextMove(MoveAction move){
         //Concrete classes must implement this
+    }
+
+    public void setSelectedStone(Stone stone){
+       currentlySelectedStone = stone;
+    }
+
+    public Stone getSelectedStone(){
+        return currentlySelectedStone;
     }
 }

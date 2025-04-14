@@ -90,4 +90,14 @@ public class GameBoardViewGroup extends ViewGroup {
             }
         }
     }
+    /**
+     * Method called when a player has clicked on a tile in the game board.
+     * Toggles the selected boolean for the tile and prompts a redraw.
+     * A selected tile has a different color.
+     * @param tile the TileView that was clicked
+     */
+    public void toggleTile(TileView tile, boolean toggle){
+        tile.setSelected(toggle);
+        tile.invalidate();
+    }
 }
