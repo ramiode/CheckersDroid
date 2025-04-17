@@ -1,5 +1,7 @@
 package com.example.checkers.game;
 
+import com.example.checkers.AgentSubject;
+import com.example.checkers.Observer;
 import com.example.checkers.ai.Agent;
 import com.example.checkers.ai.MCTSAgent;
 import com.example.checkers.ai.MinimaxAgent;
@@ -14,12 +16,13 @@ import java.util.List;
  *
  * @author Ramiar Odendaal
  */
-public abstract class Player {
+public abstract class Player implements AgentSubject {
     private String name;
     private String color;
     private List<Stone> stones;
+    protected Observer controller;
 
-    private volatile Stone currentlySelectedStone;
+    protected volatile Stone currentlySelectedStone;
 
     /**
      * Constructor for abstract player.
@@ -74,7 +77,7 @@ public abstract class Player {
      * Retrieves the next move the player has selected
      * @return the move to be executed
      */
-    public abstract MoveAction getNextMove();
+    public abstract MoveAction getNextMove(GameState state);
 
     public abstract boolean isHuman();
     public void setNextMove(MoveAction move){
@@ -87,5 +90,20 @@ public abstract class Player {
 
     public Stone getSelectedStone(){
         return currentlySelectedStone;
+    }
+
+    @Override
+    public void notifyMoveMade() {
+        controller.updateMoveMade();
+    }
+
+    @Override
+    public void addObserver(Observer o) {
+        this.controller = o;
+    }
+
+    @Override
+    public void removeObserver(Observer o) {
+        this.controller = null;
     }
 }

@@ -100,4 +100,15 @@ public class GameBoardViewGroup extends ViewGroup {
         tile.setSelected(toggle);
         tile.invalidate();
     }
+
+    public void updateUI(){
+        requestLayout();
+        final int noChildren = getChildCount();
+        for(int i = 0; i < noChildren; i++){
+            ComponentView child = (ComponentView) getChildAt(i);
+            if(child.getVisibility() != GONE){
+
+            }
+        }
+    }
 }

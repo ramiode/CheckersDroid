@@ -1,7 +1,6 @@
 package com.example.checkers.game.models;
 
 import com.example.checkers.game.MoveAction;
-import com.example.checkers.game.Player;
 import com.example.checkers.game.Stone;
 import com.example.checkers.utils.AppConstants;
 
@@ -12,12 +11,16 @@ import java.util.List;
  *
  * @author Ramiar Odendaal
  */
-public class GameBoardModel {
+public class GameBoardModel implements Cloneable{
 
-    private Stone[][] board = new Stone[8][8];
+    private Stone[][] board;
 
     public GameBoardModel() {
+        board = new Stone[8][8];
+    }
 
+    public GameBoardModel(GameBoardModel model){
+        board = model.cloneBoard();
     }
 
     /**
@@ -39,11 +42,7 @@ public class GameBoardModel {
      * @param targetCol the new column
      */
     public void placeStone(Stone stone, int targetRow, int targetCol) {
-        if (board[targetRow][targetCol] == null) {
-            board[targetRow][targetCol] = stone;
-        } else {
-            //throw InvalidMoveException
-        }
+        board[targetRow][targetCol] = stone;
     }
 
     /**
@@ -59,14 +58,10 @@ public class GameBoardModel {
         int originRow = AppConstants.ROW[oldPosition];
         int originCol = AppConstants.COL[oldPosition];
 
-        if(board[targetRow][targetCol] == null) {
-            board[originRow][originCol] = null;
-            board[targetRow][targetCol] = stone;
-            stone.setPosition(newPosition);
-        }
-        else{
-            //InvalidMoveException
-        }
+        board[originRow][originCol] = null;
+        board[targetRow][targetCol] = stone;
+        stone.setPosition(newPosition);
+
     }
 
     /**
@@ -87,7 +82,41 @@ public class GameBoardModel {
     public boolean executeMove(MoveAction move, Stone stone) {
         moveStone(stone,
                 move.from, move.to);
+        //notify UI that changes have been made
         return true; //if valid move
+    }
+    private void removeStone(Stone stone){
+        board[AppConstants.ROW[stone.getPosition()]][AppConstants.COL[stone.getPosition()]] = null;
+    }
+    public boolean executeJump(JumpAction jump){
+        List<Stone> capturedStones = jump.getCapturedStones();
+        List<Integer> path = jump.getPositions();
+
+        for(Stone stone : capturedStones){
+            removeStone(stone);
+        }
+
+        Stone playerStone = jump.getCurrentStone();
+
+        for(int x : path){
+            MoveAction move = new MoveAction(playerStone.getPosition(), x, jump.getActingPlayer(), jump.getCurrentStone());
+            moveStone(playerStone, move.from, move.to);
+            //delay updates to UI??
+        }
+        //notify UI that changes have been made
+        return true;
+    }
+
+    private Stone[][] cloneBoard(){
+        return board.clone();
+    }
+    @Override
+    public GameBoardModel clone(){
+        return new GameBoardModel(this);
+    }
+
+    public boolean isPositionOccupied(int position){
+        return board[AppConstants.ROW[position]][AppConstants.COL[position]] != null;
     }
 
 

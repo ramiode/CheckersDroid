@@ -12,7 +12,7 @@ public class HumanPlayer extends Player{
     }
 
     @Override
-    public MoveAction getNextMove(){
+    public MoveAction getNextMove(GameState state){
         return selectedAction;
     }
 
@@ -24,4 +24,6 @@ public class HumanPlayer extends Player{
     public void setNextMove(MoveAction nextMove){
         selectedAction = nextMove;
     }
+
+
 }

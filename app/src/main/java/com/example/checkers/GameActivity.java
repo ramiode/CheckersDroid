@@ -13,8 +13,10 @@ import com.example.checkers.game.GameEngine;
 import com.example.checkers.game.HumanPlayer;
 import com.example.checkers.game.MoveAction;
 import com.example.checkers.game.Player;
+import com.example.checkers.game.RuleEnforcer;
 import com.example.checkers.game.Stone;
 import com.example.checkers.game.models.GameBoardModel;
+import com.example.checkers.game.views.ComponentView;
 import com.example.checkers.game.views.GameBoardViewGroup;
 import com.example.checkers.game.views.TileView;
 import com.example.checkers.utils.AppConstants;
@@ -26,7 +28,7 @@ import java.util.concurrent.CountDownLatch;
  *
  * @author Ramiar Odendaal
  */
-public class GameActivity extends AppCompatActivity {
+public class GameActivity extends AppCompatActivity implements Observer {
     private GameBoardViewGroup gameBoardViewGroup;
     private GameBoardModel gameBoardModel;
     private GameEngine engine;
@@ -102,11 +104,13 @@ public class GameActivity extends AppCompatActivity {
         //Model components
         gameBoardModel = new GameBoardModel();
         playerOne = new HumanPlayer(true, "One");
-        playerTwo = new HumanPlayer(false, "Two");
+        playerTwo = new MachinePlayer(false, "Two", true);
+        playerTwo.addObserver(this);
         gameBoardModel.initializeStones(playerOne.getStones());
         gameBoardModel.initializeStones(playerTwo.getStones());
 
         engine = new GameEngine(playerOne, playerTwo, gameBoardModel);
+        engine.addObserver(this);
     }
 
     /**
@@ -142,8 +146,9 @@ public class GameActivity extends AppCompatActivity {
         //This is a new tile, if empty execute move if a stone has been selected previously
         if (previouslySelectedStone != null) {
             //Must set the next move for the player based on their selected action
-            if (previouslySelectedStone.getPlayerColor() == currentPlayer.getColor()) {
-                currentPlayer.setNextMove(new MoveAction(previouslySelectedStone.getPosition(), currentTile.getPosition()));
+            MoveAction move = new MoveAction(previouslySelectedStone.getPosition(), currentTile.getPosition(), currentPlayer, previouslySelectedStone);
+            if (previouslySelectedStone.getPlayerColor() == currentPlayer.getColor() && RuleEnforcer.isMoveValid(move, previouslySelectedStone, gameBoardModel)) {
+                currentPlayer.setNextMove(move);
                 //Notify the waiting engine that a move has been made
                 engine.countDownLatch();
                 gameBoardViewGroup.findStoneById(previouslySelectedStone.getId()).setPosition(currentTile.getPosition());
@@ -171,5 +176,18 @@ public class GameActivity extends AppCompatActivity {
             gameBoardViewGroup.toggleTile(previousTile, false);
         }
         previousTile = null;
+    }
+
+    @Override
+    public void updateUI(Stone stone) {
+        runOnUiThread(() -> {
+            gameBoardViewGroup.findStoneById(stone.getId()).setPosition(stone.getPosition());
+            gameBoardViewGroup.requestLayout();
+        });
+    }
+
+    @Override
+    public void updateMoveMade() {
+        engine.countDownLatch();
     }
 }
