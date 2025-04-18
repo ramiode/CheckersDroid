@@ -3,10 +3,6 @@ package com.example.checkers.game.views;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.Rect;
-import android.view.View;
-
-import com.example.checkers.utils.AppConstants;
 
 /**
  * An extension of ComponentView that represents a Stone visually on the board.
@@ -34,7 +30,9 @@ public class StoneView extends ComponentView {
 
     @Override
     protected void onDraw(Canvas canvas){
-        super.onDraw(canvas);
-        canvas.drawCircle(getWidth()/2, getHeight()/2, getWidth()/2, paint);
+        if(getVisibility() == VISIBLE) {
+            super.onDraw(canvas);
+            canvas.drawCircle(getWidth() / 2, getHeight() / 2, getWidth() / 2, paint);
+        }
     }
 }

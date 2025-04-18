@@ -1,7 +1,10 @@
-package com.example.checkers.game.models;
+package com.example.checkers.game.models.pieces;
 
-import com.example.checkers.game.Stone;
-
+/**
+ * An extension of stone representing a King. A king has all the functionality of a stone, but can also move backwards.
+ *
+ * @author Ramiar Odendaal
+ */
 public class King extends Stone {
     /**
      * Instantiates the member variables and generates a unique id for the stone.

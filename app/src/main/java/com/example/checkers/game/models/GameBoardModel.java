@@ -1,9 +1,14 @@
 package com.example.checkers.game.models;
 
-import com.example.checkers.game.MoveAction;
-import com.example.checkers.game.Stone;
+import com.example.checkers.EngineSubject;
+import com.example.checkers.Observer;
+import com.example.checkers.game.models.actions.Action;
+import com.example.checkers.game.models.actions.MoveAction;
+import com.example.checkers.game.models.pieces.Stone;
+import com.example.checkers.game.models.actions.JumpAction;
 import com.example.checkers.utils.AppConstants;
 
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -11,16 +16,32 @@ import java.util.List;
  *
  * @author Ramiar Odendaal
  */
-public class GameBoardModel implements Cloneable{
+public class GameBoardModel implements Cloneable, EngineSubject {
 
     private Stone[][] board;
+    private List<Observer> observers;
 
+    /**
+     * Constructor that initializes an empty board to be filled later.
+     */
     public GameBoardModel() {
         board = new Stone[8][8];
+        observers = new LinkedList<>();
     }
 
+    /**
+     * Constructor that initializes a duplicate board.
+     *
+     * @param model the model which will have its board duplicated
+     */
     public GameBoardModel(GameBoardModel model){
-        board = model.cloneBoard();
+        board = new Stone[8][8];
+        for(int i = 0; i < 8; i++){
+            for(int j = 0; j < 8; j++){
+                board[i][j] = model.board[i][j] != null ? model.board[i][j].clone() : null;
+            }
+        }
+        observers = new LinkedList<>();
     }
 
     /**
@@ -52,7 +73,7 @@ public class GameBoardModel implements Cloneable{
      * @param oldPosition the previous position of the stone on the board
      * @param newPosition the new position of the stone on the board
      */
-    public void moveStone(Stone stone, int oldPosition, int newPosition) {
+    private void executeMove(Stone stone, int oldPosition, int newPosition) {
         int targetRow = AppConstants.ROW[newPosition];
         int targetCol = AppConstants.COL[newPosition];
         int originRow = AppConstants.ROW[oldPosition];
@@ -62,6 +83,7 @@ public class GameBoardModel implements Cloneable{
         board[targetRow][targetCol] = stone;
         stone.setPosition(newPosition);
 
+        observers.forEach(e -> e.updateMoveStoneInUI(stone));
     }
 
     /**
@@ -75,49 +97,113 @@ public class GameBoardModel implements Cloneable{
 
     /**
      * Executes a MoveAction on the board.
-     * @param move the action to be executed
+     *
+     * @param action the action to be executed
      * @param stone the stone to be moved
-     * @return true if succesful; false otherwise
      */
-    public boolean executeMove(MoveAction move, Stone stone) {
-        moveStone(stone,
-                move.from, move.to);
-        //notify UI that changes have been made
-        return true; //if valid move
+    public void executeAction(Action action, Stone stone) {
+        if(action instanceof MoveAction){
+            MoveAction move = (MoveAction) action;
+            executeMove(stone, move.from, move.to);
+        }
+        else if(action instanceof JumpAction){
+            executeJump((JumpAction) action);
+        }
     }
+
+    /**
+     * Removes the specified stone form the board.
+     *
+     * @param stone the stone to be removed
+     */
     private void removeStone(Stone stone){
         board[AppConstants.ROW[stone.getPosition()]][AppConstants.COL[stone.getPosition()]] = null;
     }
-    public boolean executeJump(JumpAction jump){
+    //TODO: IMPLEMENT THIS
+    /**
+     * Executes a jump move.
+     * @param jump the jump action to be executed
+     */
+    private void executeJump(JumpAction jump){
         List<Stone> capturedStones = jump.getCapturedStones();
         List<Integer> path = jump.getPositions();
 
-        for(Stone stone : capturedStones){
-            removeStone(stone);
-        }
-
-        Stone playerStone = jump.getCurrentStone();
-
+        Stone playerStone = jump.getStone();
+        //Move the stone
         for(int x : path){
-            MoveAction move = new MoveAction(playerStone.getPosition(), x, jump.getActingPlayer(), jump.getCurrentStone());
-            moveStone(playerStone, move.from, move.to);
+            MoveAction move = new MoveAction(playerStone.getPosition(), x, jump.getActingPlayer(), jump.getStone());
+            executeMove(playerStone, move.from, move.to);
+            System.out.println("MOVING FROM : " +move.from + " TO " + move.to);
+            if(observers.size() != 0){
+                observers.forEach(e -> e.updateMoveStoneInUI(playerStone));
+            }
             //delay updates to UI??
         }
+
+        for(Stone stone : capturedStones){
+            removeStone(stone);
+            if(observers.size() != 0){
+                observers.forEach(e -> e.updateRemoveStoneFromUI(stone));
+            }
+        }
+
+
+
         //notify UI that changes have been made
-        return true;
     }
 
-    private Stone[][] cloneBoard(){
+    /**
+     * Clones the array used for the board.
+     *
+     * @return the cloned version of the board
+     */
+    private Stone[][] cloneBoardArray(){
         return board.clone();
     }
+
+    /**
+     * Used to clone the board model to simulate different states without affecting the actual game board.
+     *
+     * @return the cloned model
+     */
     @Override
     public GameBoardModel clone(){
         return new GameBoardModel(this);
     }
 
+    /**
+     * Checks if the position on the board contains a stone.
+     *
+     * @param position the position on the board
+     * @return true if the position is occupied; false otherwise
+     */
     public boolean isPositionOccupied(int position){
-        return board[AppConstants.ROW[position]][AppConstants.COL[position]] != null;
+        if(position > 63 || position < 0){
+            return true;
+        }
+        else{
+            return board[AppConstants.ROW[position]][AppConstants.COL[position]] != null;
+        }
+    }
+    //TODO: DO SOMETHING HERE
+    @Override
+    public void notifyUpdateUI() {
+        //
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public void addObserver(Observer o) {
+        observers.add(o);
+    }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public void removeObserver(Observer o) {
+        observers.remove(o);
+    }
 }

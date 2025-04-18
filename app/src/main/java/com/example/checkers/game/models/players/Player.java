@@ -1,14 +1,15 @@
-package com.example.checkers.game;
+package com.example.checkers.game.models.players;
 
 import com.example.checkers.AgentSubject;
 import com.example.checkers.Observer;
-import com.example.checkers.ai.Agent;
-import com.example.checkers.ai.MCTSAgent;
-import com.example.checkers.ai.MinimaxAgent;
+import com.example.checkers.game.GameState;
+import com.example.checkers.game.models.actions.Action;
+import com.example.checkers.game.models.actions.MoveAction;
+import com.example.checkers.game.models.pieces.Stone;
 import com.example.checkers.utils.AppConstants;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -17,11 +18,11 @@ import java.util.List;
  * @author Ramiar Odendaal
  */
 public abstract class Player implements AgentSubject {
-    private String name;
-    private String color;
+    private final String name;
+    private final String color;
     private List<Stone> stones;
-    protected Observer controller;
-
+    protected List<Observer> controllers;
+    private volatile Action selectedAction;
     protected volatile Stone currentlySelectedStone;
 
     /**
@@ -34,6 +35,7 @@ public abstract class Player implements AgentSubject {
         this.name = name;
         stones = new ArrayList<>();
         initializePieces(isRed);
+        controllers = new LinkedList<>();
     }
 
     /**
@@ -43,7 +45,7 @@ public abstract class Player implements AgentSubject {
      */
     private void initializePieces(boolean isRed){
         int start = isRed? 40 : 0;
-        int end = isRed ? 64 : 24;
+        int end = isRed ? 63 : 24;
         for(int i = start; i < end; i++){
             //if even row then place in odd columns
             if((i & 1) % 2 == 1 && (i >> 3) % 2 == 0){
@@ -77,33 +79,73 @@ public abstract class Player implements AgentSubject {
      * Retrieves the next move the player has selected
      * @return the move to be executed
      */
-    public abstract MoveAction getNextMove(GameState state);
-
-    public abstract boolean isHuman();
-    public void setNextMove(MoveAction move){
-        //Concrete classes must implement this
+    public Action getNextMove(){
+        return selectedAction;
     }
 
+    /**
+     * Returns true if this is a human player, otherwise returns false.
+     *
+     * @return true or false depending on if player is human
+     */
+    public abstract boolean isHuman();
+
+    /**
+     * Sets the next action that the player has chosen.
+     *
+     * @param action the action to be set
+     */
+    public void setNextMove(Action action){
+        selectedAction = action;
+    }
+
+    /**
+     * Sets the player's currently selected stone.
+     *
+     * @param stone the stone to be selected
+     */
     public void setSelectedStone(Stone stone){
        currentlySelectedStone = stone;
     }
 
+    /**
+     * Retrieves the currently selected stone.
+     *
+     * @return the stone that the player has selected
+     */
     public Stone getSelectedStone(){
         return currentlySelectedStone;
     }
 
+    /**
+     * Notifies the controller that a move has been made.
+     */
     @Override
     public void notifyMoveMade() {
-        controller.updateMoveMade();
+        controllers.forEach(Observer::updateMoveMade);
     }
 
+    /**
+     * Adds an observer which can be notified later.
+     *
+     * @param o the observer to be added
+     */
     @Override
     public void addObserver(Observer o) {
-        this.controller = o;
+       controllers.add(o);
     }
 
+    /**
+     * Removes an observer from the observers list.
+     *
+     * @param o the observer to be removed
+     */
     @Override
     public void removeObserver(Observer o) {
-        this.controller = null;
+        controllers.remove(o);
+    }
+
+    public String getName(){
+        return name;
     }
 }

@@ -1,7 +1,7 @@
-package com.example.checkers.game.models;
+package com.example.checkers.game.models.actions;
 
-import com.example.checkers.game.Player;
-import com.example.checkers.game.Stone;
+import com.example.checkers.game.models.players.Player;
+import com.example.checkers.game.models.pieces.Stone;
 
 /**
  * Abstract class representing a generic action.
@@ -37,7 +37,14 @@ public abstract class Action {
      *
      * @return the stone that is being used for the action
      */
-    public Stone getCurrentStone(){
+    public Stone getStone(){
         return currentStone;
     }
+
+    @Override
+    public String toString(){
+        return "Player " + actingPlayer.getName() + " " + getActionMessage();
+    }
+
+    public abstract String getActionMessage();
 }

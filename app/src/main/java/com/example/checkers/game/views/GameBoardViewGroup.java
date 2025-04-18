@@ -3,7 +3,7 @@ package com.example.checkers.game.views;
 import android.content.Context;
 import android.view.ViewGroup;
 
-import com.example.checkers.game.Stone;
+import com.example.checkers.game.models.pieces.Stone;
 import com.example.checkers.utils.AppConstants;
 
 import java.util.List;
@@ -96,7 +96,7 @@ public class GameBoardViewGroup extends ViewGroup {
      * A selected tile has a different color.
      * @param tile the TileView that was clicked
      */
-    public void toggleTile(TileView tile, boolean toggle){
+    public void highlightTile(TileView tile, boolean toggle){
         tile.setSelected(toggle);
         tile.invalidate();
     }
