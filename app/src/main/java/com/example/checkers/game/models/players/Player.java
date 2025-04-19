@@ -4,6 +4,7 @@ import com.example.checkers.AgentSubject;
 import com.example.checkers.Observer;
 import com.example.checkers.game.GameState;
 import com.example.checkers.game.models.actions.Action;
+import com.example.checkers.game.models.actions.JumpAction;
 import com.example.checkers.game.models.actions.MoveAction;
 import com.example.checkers.game.models.pieces.Stone;
 import com.example.checkers.utils.AppConstants;
@@ -24,6 +25,7 @@ public abstract class Player implements AgentSubject {
     protected List<Observer> controllers;
     private volatile Action selectedAction;
     protected volatile Stone currentlySelectedStone;
+    private volatile List<JumpAction> availableJumps;
 
     /**
      * Constructor for abstract player.
@@ -147,5 +149,12 @@ public abstract class Player implements AgentSubject {
 
     public String getName(){
         return name;
+    }
+
+    public List<JumpAction> getJumpPositions(){
+        return availableJumps;
+    }
+    public void setJumpPositions(List<JumpAction> jumps){
+        availableJumps = jumps;
     }
 }

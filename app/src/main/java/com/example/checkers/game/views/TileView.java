@@ -39,6 +39,10 @@ public class TileView extends ComponentView {
         }
     }
 
+    public boolean getSelected(){
+        return selected;
+    }
+
     @SuppressLint("DrawAllocation")
     @Override
     protected void onDraw(Canvas canvas){

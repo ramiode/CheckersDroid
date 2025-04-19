@@ -55,6 +55,10 @@ public class GameActivity extends AppCompatActivity implements Observer {
      *                           previously being shut down then this Bundle contains the data it most
      *                           recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
      */
+    //TODO: Refactor this whole solution so that GameEngine maintains a GameState
+    //TODO: Change RuleEnforcer so that it clones the state when checking jumps
+    //TODO: Implement jumping for human player
+    //TODO: Controller thread?
     //TODO: Clean up the listener code by creating a new listener type.
     //TODO: Change logic for JumpAction so it doesn't change turn until no more jumps are available
     //TODO: Clean up this whole class
