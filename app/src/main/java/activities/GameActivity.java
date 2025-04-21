@@ -30,6 +30,8 @@ import com.example.checkers.game.views.StoneView;
 import com.example.checkers.game.views.TileView;
 import com.example.checkers.utils.AppConstants;
 
+import java.util.List;
+
 /**
  * Activity for the game that acts as a controller for the models and the views.
  *
@@ -38,13 +40,9 @@ import com.example.checkers.utils.AppConstants;
 
 public class GameActivity extends AppCompatActivity implements Observer {
     private GameBoardViewGroup gameBoardViewGroup;
-    private GameBoardModel gameBoardModel;
     private GameEngine engine;
     private Player playerOne;
     private Player playerTwo;
-    private boolean isJumping;
-    private JumpAction jump;
-    private GameState jumpState;
     private TileView previousTile;
     private TextView logText;
 
@@ -55,17 +53,12 @@ public class GameActivity extends AppCompatActivity implements Observer {
      *                           previously being shut down then this Bundle contains the data it most
      *                           recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
      */
-    //TODO: Refactor this whole solution so that GameEngine maintains a GameState
-    //TODO: Change RuleEnforcer so that it clones the state when checking jumps
-    //TODO: Implement jumping for human player
+
     //TODO: Controller thread?
     //TODO: Clean up the listener code by creating a new listener type.
-    //TODO: Change logic for JumpAction so it doesn't change turn until no more jumps are available
     //TODO: Clean up this whole class
-    //TODO: Implement the KingAction
-    //TODO: Finish RuleEnforcer class
     //TODO: Go through all classes and make them not rely on hard-coded variables, especially GameState class, GameActivity, and GameEngine
-    //TODO: Implement rules for checkers
+    //TODO: Fix memory leak issues related to cloning.
     //TODO: Start on the AI models and logging data
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,25 +87,9 @@ public class GameActivity extends AppCompatActivity implements Observer {
             //Highlights selected tile
             gameBoardViewGroup.highlightTile(currentTile, true);
             int position = currentTile.getPosition();
-            Stone stoneOnCurrentTile = gameBoardModel.getStoneByPosition(position);
+
+            Stone stoneOnCurrentTile = engine.getModel().getStoneByPosition(position);
             Stone previouslySelectedStone = currentPlayer.getSelectedStone();
-
-            if(isJumping){
-                int from = jump.getPositions().get(jump.getPositions().size()-1);
-                int to = currentTile.getPosition();
-                jump.addJumpPosition(to);
-                jump.addCapturedStone(gameBoardModel.getStoneByPosition(from + (to - from)/2));
-                jumpState.updateStateWithPartialMove(new MoveAction(from, to, currentPlayer, previouslySelectedStone));
-                if(jumpState.getJumpActions().size() == 0){
-                    isJumping = false;
-                    currentPlayer.setNextMove(jump);
-                    jump = null;
-                    jumpState = null;
-                    //Notify the waiting engine that a move has been made
-                    engine.countDownLatch();
-
-                }
-            }
 
             if (stoneOnCurrentTile != null) {
                 handleTileWithStone(currentPlayer, currentTile, stoneOnCurrentTile, previouslySelectedStone);
@@ -123,8 +100,8 @@ public class GameActivity extends AppCompatActivity implements Observer {
         //Add listener to all TileViews on the board
         gameBoardViewGroup.initializeBoard(listener);
         //Add StoneViews to the board
-        gameBoardViewGroup.initializeStones(playerOne.getStones(), AppConstants.RED_STONE);
-        gameBoardViewGroup.initializeStones(playerTwo.getStones(), AppConstants.WHITE_STONE);
+        gameBoardViewGroup.initializeStones(engine.getPlayerOneStones(), AppConstants.RED_STONE);
+        gameBoardViewGroup.initializeStones(engine.getPlayerTwoStones(), AppConstants.WHITE_STONE);
 
         engine.startGame();
     }
@@ -143,15 +120,12 @@ public class GameActivity extends AppCompatActivity implements Observer {
                 ViewGroup.LayoutParams.MATCH_PARENT));
         mainLayout.addView(gameBoardViewGroup);
         //Model components
-        gameBoardModel = new GameBoardModel();
-        gameBoardModel.addObserver(this);
+
         playerOne = new HumanPlayer(true, "One");
         playerTwo = new MachinePlayer(false, "Two", true);
         playerTwo.addObserver(this);
-        gameBoardModel.initializeStones(playerOne.getStones());
-        gameBoardModel.initializeStones(playerTwo.getStones());
 
-        engine = new GameEngine(playerOne, playerTwo, gameBoardModel);
+        engine = new GameEngine(playerOne, playerTwo);
         engine.addObserver(this);
     }
 
@@ -168,6 +142,7 @@ public class GameActivity extends AppCompatActivity implements Observer {
         if (previousTile == null && previousStone == null) {
             currentPlayer.setSelectedStone(currentStone);
             previousTile = currentTile;
+            //add highlighting of available jumps
         }
         //A selection has been made previously but the current tile also contains a stone (invalid move)
         else {
@@ -190,8 +165,8 @@ public class GameActivity extends AppCompatActivity implements Observer {
             //Must set the next move for the player based on their selected action
             int from = previouslySelectedStone.getPosition();
             int to = currentTile.getPosition();
-            Action move = Math.abs(to - from) > 9 ? createJumpAction(currentPlayer, previouslySelectedStone, currentTile.getPosition(), gameBoardModel.getStoneByPosition(from + (to - from)/2)) : new MoveAction(previouslySelectedStone.getPosition(), currentTile.getPosition(), currentPlayer, previouslySelectedStone);
-            if (previouslySelectedStone.getPlayerColor() == currentPlayer.getColor() && RuleEnforcer.isMoveValid(move, new GameState(gameBoardModel, playerOne, playerTwo, currentPlayer))) {
+               Action move = Math.abs(to - from) > 9 ? createJumpAction(previouslySelectedStone, to) : new MoveAction(previouslySelectedStone.getPosition(), currentTile.getPosition(), currentPlayer, previouslySelectedStone);
+            if (previouslySelectedStone.getPlayerColor() == currentPlayer.getColor() && RuleEnforcer.isMoveValid(move, engine.getCurrentState())) {
                 currentPlayer.setNextMove(move);
                 //Notify the waiting engine that a move has been made
                 engine.countDownLatch();
@@ -208,15 +183,12 @@ public class GameActivity extends AppCompatActivity implements Observer {
         }
     }
 
-    public JumpAction createJumpAction(Player currentPlayer, Stone stone, int position, Stone capturedStone){
-        isJumping = true;
-        jump = jump == null ? new JumpAction(currentPlayer, stone) : jump;
-        jumpState = jumpState == null ? new GameState(gameBoardModel, playerOne, playerTwo, currentPlayer) : jumpState;
-        jump.addJumpPosition(position);
-        jump.addCapturedStone(capturedStone);
-        jumpState.updateStateWithPartialMove(new MoveAction(stone.getPosition(), position, currentPlayer, stone));
-        return jump;
-
+    public JumpAction createJumpAction(Stone stone, int position){
+        List<JumpAction> availableJumps = engine.getCurrentState().getJumpActions();
+        return availableJumps.stream()
+                .filter(jump -> jump.getPositions().get(jump.getPositions().size()-1) == position && jump.getStone().getId() == stone.getId())
+                .findFirst()
+                .orElse(null);
     }
     /**
      * Helper method that resets all changes brought about by selecting tiles on the screen.
@@ -244,7 +216,12 @@ public class GameActivity extends AppCompatActivity implements Observer {
     @Override
     public void updateMoveStoneInUI(Stone stone){
         runOnUiThread(() -> {
-            gameBoardViewGroup.findStoneById(stone.getId()).setPosition(stone.getPosition());
+            StoneView s = gameBoardViewGroup.findStoneById(stone.getId());
+            if(stone.getKingStatus()){
+                s.setColor(AppConstants.KING_COLOR);
+                s.invalidate();
+            }
+            s.setPosition(stone.getPosition());
             gameBoardViewGroup.requestLayout();
         });
     }
@@ -282,25 +259,8 @@ public class GameActivity extends AppCompatActivity implements Observer {
             gameBoardViewGroup.highlightTile(currentTile, true);
 
             int position = currentTile.getPosition();
-            Stone stoneOnCurrentTile = gameBoardModel.getStoneByPosition(position);
+            Stone stoneOnCurrentTile = engine.getModel().getStoneByPosition(position);
             Stone previouslySelectedStone = currentPlayer.getSelectedStone();
-
-            if(isJumping){
-                int from = jump.getPositions().get(jump.getPositions().size()-1);
-                int to = currentTile.getPosition();
-                jump.addJumpPosition(to);
-                jump.addCapturedStone(gameBoardModel.getStoneByPosition(from + (to - from)/2));
-                jumpState.updateStateWithPartialMove(new MoveAction(from, to, currentPlayer, previouslySelectedStone));
-                if(jumpState.getJumpActions().size() == 0){
-                    isJumping = !isJumping;
-                    currentPlayer.setNextMove(jump);
-                    jump = null;
-                    jumpState = null;
-                    //Notify the waiting engine that a move has been made
-                    engine.countDownLatch();
-
-                }
-            }
 
             if (stoneOnCurrentTile != null) {
                 handleTileWithStone(currentPlayer, currentTile, stoneOnCurrentTile, previouslySelectedStone);

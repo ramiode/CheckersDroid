@@ -18,7 +18,7 @@ public class RuleEnforcer {
             return isMoveValid((MoveAction) action, state.getBoard(), false);
         }
         else if(action instanceof JumpAction){
-            return isJumpValid((JumpAction) action, state);
+            return isJumpValid((JumpAction) action, state.clone());
         }
         else{
             return false;
@@ -35,6 +35,7 @@ public class RuleEnforcer {
             return isMoveValid;
         }
         else{
+            //change to not update state?
             state.updateStateWithPartialMove(firstJump);
             boolean areAllMovesValid = IntStream.range(1, positions.size())
                     .mapToObj(i -> new MoveAction(positions.get(i - 1), positions.get(i), jump.getActingPlayer(), jump.getStone()))

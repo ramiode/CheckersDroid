@@ -11,7 +11,7 @@ import android.graphics.Paint;
  */
 public class StoneView extends ComponentView {
 
-    private int color;
+
     private final Paint paint;
 
     /**
@@ -23,16 +23,18 @@ public class StoneView extends ComponentView {
      */
     public StoneView(Context context, int color, int position) {
         super(context, position);
-        this.color = color;
         this.paint = new Paint();
         paint.setColor(color);
     }
 
+    public void setColor(int color){
+        paint.setColor(color);
+    }
     @Override
     protected void onDraw(Canvas canvas){
         if(getVisibility() == VISIBLE) {
             super.onDraw(canvas);
-            canvas.drawCircle(getWidth() / 2, getHeight() / 2, getWidth() / 2, paint);
+            canvas.drawCircle(getWidth() / 2f, getHeight() / 2f, getWidth() / 2f, paint);
         }
     }
 }

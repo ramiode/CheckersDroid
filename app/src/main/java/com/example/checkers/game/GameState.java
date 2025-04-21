@@ -13,25 +13,22 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-public class GameState {
-    private final GameBoardModel board;
+public class GameState implements Cloneable{
+    private GameBoardModel board;
     private final Player playerOne;
     private final Player playerTwo;
     private Player currentPlayer;
-    private List<JumpAction> availableJumpsForCurrentPlayer;
-
-    //TODO: LOOK INTO AVAILABLE JUMPS FOR CURRENT AS A SOURCE FOR STACKOVERFLOW
-
+    //TODO: Fix the memory leak in findJumps
     public GameState(GameBoardModel board, Player playerOne, Player playerTwo, Player currentPlayer){
         this.board = board.clone();
+        //have to clone players too
         this.playerOne = playerOne;
         this.playerTwo = playerTwo;
         this.currentPlayer = currentPlayer;
-        this.availableJumpsForCurrentPlayer = new LinkedList<>();
     }
 
     public List<Action> generateLegalActions(){
-        List<Stone> heldStones = currentPlayer.getStones();
+        List<Stone> heldStones = currentPlayer.equals(playerOne) ? board.getPlayerOneStones() : board.getPlayerTwoStones();
         List<Action> allLegalActions = new ArrayList<>();
 
         List<JumpAction> availableJumps = generateJumpActions(heldStones);
@@ -41,15 +38,6 @@ public class GameState {
         else{
             allLegalActions.addAll(generateMoveActions(heldStones));
         }
-        //TODO: REMOVE DEBUG TEXT
-        System.out.println("+++++++++++++++++++++++++++++++++");
-        currentPlayer.getStones().forEach(e -> System.out.println(e.getPosition()));
-        System.out.println("+++++++++++++++++++++++++++++++++");
-        System.out.println("--------------------------------");
-        System.out.println("SIMULATION TO FIND ALL POSSIBLE MOVES");
-        allLegalActions.forEach(e -> System.out.println("STONE " + e.getStone().getPosition() + " " + e));
-        System.out.println("--------------------------------");
-
 
         return allLegalActions;
 
@@ -77,18 +65,14 @@ public class GameState {
     }
     //TODO: LOOK INTO THIS -USEFUL?
     public List<JumpAction> getJumpActions(){
-        if(availableJumpsForCurrentPlayer == null){
-            availableJumpsForCurrentPlayer = generateJumpActions(currentPlayer.getStones());
-        }
-        return availableJumpsForCurrentPlayer;
+        return generateJumpActions(currentPlayer.equals(playerOne) ? board.getPlayerOneStones() : board.getPlayerTwoStones());
     }
     private List<JumpAction> generateJumpActions(List<Stone> stones){
         LinkedList<JumpAction> possibleMoves = new LinkedList<>();
         Iterator<Stone> itr = stones.iterator();
 
-
         while(itr.hasNext()){
-            Stone stone = (Stone) itr.next();
+            Stone stone = itr.next();
             int[] directions = stone.getDirections();
             int from = stone.getPosition();
 
@@ -104,9 +88,12 @@ public class GameState {
         }
         return possibleMoves;
     }
+    public Player getCurrentPlayer(){
+        return currentPlayer;
+    }
     //Stone is only used for the color
     private void findJumps(List<JumpAction> possibleJumps, JumpAction jump, int from, int[] directions){
-        boolean notDeadEnd = false;
+        boolean deadEnd = true;
         //TODO: KING MIGHT GET STUCK IN A LOOP HERE SINCE IT CAN BACKTRACK
         for(int direction : directions){
             //clone the jump so far
@@ -120,12 +107,11 @@ public class GameState {
 
                 findJumps(possibleJumps, updatedJump, targetPos, directions);
 
-                notDeadEnd = true;
+                deadEnd = false;
             }
-            if(notDeadEnd && !jump.isEmpty() && RuleEnforcer.isMoveValid(jump, this)){
-                possibleJumps.add(jump);
-            }
-
+        }
+        if(deadEnd && !jump.isEmpty() && RuleEnforcer.isMoveValid(jump, this)){
+            possibleJumps.add(jump);
         }
     }
 
@@ -153,13 +139,11 @@ public class GameState {
     }
     public void updateStateWithAction(Stone stone, Action action){
         board.executeAction(action, stone);
-        availableJumpsForCurrentPlayer = null;
         switchPlayer();
     }
 
     public void updateStateWithPartialMove(MoveAction move){
-        availableJumpsForCurrentPlayer = null;
-        board.executeAction(move, move.getStone());
+        board.executeAction(move, move.getStone().clone());
     }
 
     private void switchPlayer(){
@@ -168,6 +152,16 @@ public class GameState {
 
     public boolean isTerminal(){
         return true;
+    }
+
+    public GameState clone(){
+        try {
+            GameState clonedState = (GameState) super.clone();
+            clonedState.board = board.clone();
+            return clonedState;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
     }
 
 }

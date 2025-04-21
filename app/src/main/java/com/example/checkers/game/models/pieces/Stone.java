@@ -11,7 +11,7 @@ public class Stone implements Cloneable{
     private int position;
     private String player;
     private int[] directions;
-    private boolean isKing;
+    private volatile boolean isKing;
     private int id;
 
     /**
@@ -73,6 +73,9 @@ public class Stone implements Cloneable{
         directions = AppConstants.KING_DIRECTIONS;
     }
 
+    public boolean getKingStatus(){
+        return isKing;
+    }
     public int[] getDirections(){
         return directions;
     }

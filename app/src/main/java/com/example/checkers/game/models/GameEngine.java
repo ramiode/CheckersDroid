@@ -3,6 +3,8 @@ package com.example.checkers.game.models;
 import com.example.checkers.EngineSubject;
 import com.example.checkers.game.GameState;
 import com.example.checkers.game.models.actions.Action;
+import com.example.checkers.game.models.pieces.Stone;
+import com.example.checkers.game.models.players.HumanPlayer;
 import com.example.checkers.game.models.players.MachinePlayer;
 import com.example.checkers.Observer;
 import com.example.checkers.game.models.players.Player;
@@ -21,7 +23,8 @@ public class GameEngine implements EngineSubject {
     private Player turnToPlay;
     private CountDownLatch latch;
     private volatile boolean isRunning;
-    private final GameBoardModel gameBoardModel;
+    private volatile GameBoardModel gameBoardModel;
+    private GameState currentState;
     private final List<Observer> observers;
 
     /**
@@ -29,12 +32,13 @@ public class GameEngine implements EngineSubject {
      *
      * @param playerOne The red player
      * @param playerTwo The white player
-     * @param gameBoardModel The checkers board
      */
-    public GameEngine(Player playerOne, Player playerTwo, GameBoardModel gameBoardModel){
-        this.playerOne = playerOne;
-        this.playerTwo = playerTwo;
-        this.gameBoardModel = gameBoardModel;
+    public GameEngine(Player playerOne, Player playerTwo){
+        this.playerOne = new HumanPlayer(true, "Chad");
+        this.playerTwo = new MachinePlayer(false, "Brad", true);
+        GameBoardModel model = new GameBoardModel();
+        model.initializeStones(true);
+        this.currentState = new GameState(model, playerOne, playerTwo, playerOne);
         observers = new LinkedList<>();
         gameLogger = new DataLogger();
     }
@@ -45,33 +49,39 @@ public class GameEngine implements EngineSubject {
     public void startGame(){
         isRunning = true;
         //player one always starts
-        turnToPlay = playerOne;
+        turnToPlay = currentState.getCurrentPlayer();
 
         Runnable gameLoop = () -> {
             while(isRunning){
                 latch = new CountDownLatch(1);
                 try {
+                    turnToPlay = currentState.getCurrentPlayer();
+
                     gameLogger.printSystemText(String.format("Waiting for player %s...\n", turnToPlay.getName()), observers.get(0));
+
                     if(!turnToPlay.isHuman()){
                         MachinePlayer player = (MachinePlayer) turnToPlay;
-                        player.generateAction(new GameState(gameBoardModel, playerOne, playerTwo, turnToPlay));
+                        player.generateAction(currentState);
                     }
+
                     latch.await();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                     Action nextMove = turnToPlay.getNextMove();
 
-                    gameBoardModel.executeAction(nextMove, turnToPlay.getSelectedStone());
+                    //gameBoardModel.executeAction(nextMove, turnToPlay.getSelectedStone());
+                    currentState.updateStateWithAction(turnToPlay.getSelectedStone(), nextMove);
                     gameLogger.printAction(nextMove, observers.get(0));
+                    observers.get(0).updateMoveStoneInUI(turnToPlay.getSelectedStone());
                     turnToPlay.setSelectedStone(null);
-                    observers.get(0).updateMoveStoneInUI(nextMove.getStone());
+                    printBoard();
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                turnToPlay = turnToPlay.equals(playerOne) ? playerTwo : playerOne;
+                //currentState.switchPlayer();
 
 
             }
@@ -95,7 +105,7 @@ public class GameEngine implements EngineSubject {
      * @return the current player
      */
     public Player getTurnToPlay(){
-        return turnToPlay;
+        return currentState.getCurrentPlayer();
     }
 
     /**
@@ -108,19 +118,37 @@ public class GameEngine implements EngineSubject {
     /**
      * Checks if a terminal state has been reached.
      */
-    private void checkIfGameOver(){
-        GameState currentState = new GameState(gameBoardModel, playerOne, playerTwo, turnToPlay);
-        currentState.isTerminal();
+    private boolean checkIfGameOver(){
+        return currentState.isTerminal();
     }
     //TODO: What to do here??
     @Override
     public void notifyUpdateUI() {
 
     }
+    public GameBoardModel getModel(){
+        return currentState.getBoard();
+    }
 
+    public GameState getCurrentState(){
+        return currentState;
+    }
+    public List<Stone> getPlayerOneStones(){
+        return currentState.getBoard().getPlayerOneStones();
+    }
+    public List<Stone> getPlayerTwoStones(){
+        return currentState.getBoard().getPlayerTwoStones();
+    }
     @Override
     public void addObserver(Observer o) {
         observers.add(o);
+        currentState.getBoard().addObserver(o);
+        playerTwo.addObserver(o);
+    }
+
+    private void printBoard(){
+        GameBoardModel board = currentState.getBoard();
+        board.printBoard();
     }
 
     @Override

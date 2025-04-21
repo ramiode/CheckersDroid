@@ -18,6 +18,9 @@ public final class AppConstants {
 
     public final static int[] KING_DIRECTIONS = {-7, -9, 7, 9};
 
+    public final static int[] RED_ROW = {56, 63};
+    public final static int[] WHITE_ROW = {0, 7};
+
     //Even tile
     public final static int WHITE = Color.GRAY;
     //Odd tile
@@ -27,6 +30,7 @@ public final class AppConstants {
 
     public final static int RED_STONE = Color.RED;
     public final static int WHITE_STONE = Color.WHITE;
+    public final static int KING_COLOR = Color.BLUE;
 
     public final static String PLAYER_WHITE = "WHITE";
     public final static String PLAYER_RED = "RED";

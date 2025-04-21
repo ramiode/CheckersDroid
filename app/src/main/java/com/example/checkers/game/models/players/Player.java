@@ -21,11 +21,9 @@ import java.util.List;
 public abstract class Player implements AgentSubject {
     private final String name;
     private final String color;
-    private List<Stone> stones;
     protected List<Observer> controllers;
     private volatile Action selectedAction;
     protected volatile Stone currentlySelectedStone;
-    private volatile List<JumpAction> availableJumps;
 
     /**
      * Constructor for abstract player.
@@ -35,30 +33,7 @@ public abstract class Player implements AgentSubject {
     public Player(boolean isRed, String name){
         this.color = isRed ? AppConstants.PLAYER_RED : AppConstants.PLAYER_WHITE;
         this.name = name;
-        stones = new ArrayList<>();
-        initializePieces(isRed);
         controllers = new LinkedList<>();
-    }
-
-    /**
-     * Initializes the player's stones. Uses bitwise operations to position stones in the traditional checkers pattern.
-     *
-     * @param isRed True if player is red; false otherwise
-     */
-    private void initializePieces(boolean isRed){
-        int start = isRed? 40 : 0;
-        int end = isRed ? 63 : 24;
-        for(int i = start; i < end; i++){
-            //if even row then place in odd columns
-            if((i & 1) % 2 == 1 && (i >> 3) % 2 == 0){
-                stones.add(new Stone(i, color));
-            }
-            //if odd row then place in even columns
-            else if((i >> 3) % 2 == 1 && (i & 1) % 2 == 0){
-                stones.add(new Stone(i, color));
-            }
-        }
-
     }
 
     /**
@@ -67,14 +42,6 @@ public abstract class Player implements AgentSubject {
      */
     public String getColor(){
         return color;
-    }
-
-    /**
-     * Get the list of stones the player currently possesses.
-     * @return the list of stones
-     */
-    public List<Stone> getStones(){
-        return stones;
     }
 
     /**
@@ -149,12 +116,5 @@ public abstract class Player implements AgentSubject {
 
     public String getName(){
         return name;
-    }
-
-    public List<JumpAction> getJumpPositions(){
-        return availableJumps;
-    }
-    public void setJumpPositions(List<JumpAction> jumps){
-        availableJumps = jumps;
     }
 }

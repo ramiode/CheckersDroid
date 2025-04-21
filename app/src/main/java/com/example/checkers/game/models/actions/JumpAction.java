@@ -6,6 +6,7 @@ import com.example.checkers.utils.AppConstants;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Concrete action representing a jump or series of jumps in the game.
@@ -95,7 +96,7 @@ public class JumpAction extends Action implements Cloneable {
 
     @Override
     public JumpAction clone(){
-       return new JumpAction(getActingPlayer(), getStone(), path, captured);
+       return new JumpAction(getActingPlayer(), getStone(), new LinkedList<>(path), captured.stream().map(Stone::clone).collect(Collectors.toCollection(LinkedList::new)));
     }
 
     public boolean isEmpty(){
