@@ -12,7 +12,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-//Memory leak occurs when multijump is available for machine player
 public class GameState implements Cloneable{
     private GameBoardModel board;
     private final Player playerOne;
@@ -20,7 +19,7 @@ public class GameState implements Cloneable{
     private Player currentPlayer;
     public GameState(GameBoardModel board, Player playerOne, Player playerTwo, Player currentPlayer){
         this.board = board.clone();
-        //have to clone players too
+
         this.playerOne = playerOne;
         this.playerTwo = playerTwo;
         this.currentPlayer = currentPlayer;
@@ -31,6 +30,7 @@ public class GameState implements Cloneable{
         List<Action> allLegalActions = new ArrayList<>();
 
         List<JumpAction> availableJumps = generateJumpActions(heldStones);
+
         if(availableJumps.size() > 0){
             allLegalActions.addAll(availableJumps);
         }
@@ -60,7 +60,7 @@ public class GameState implements Cloneable{
         }
         return possibleMoves;
     }
-    //TODO: LOOK INTO THIS -USEFUL?
+
     public List<JumpAction> getJumpActions(){
         return generateJumpActions(currentPlayer.equals(playerOne) ? board.getPlayerOneStones() : board.getPlayerTwoStones());
     }
@@ -86,10 +86,10 @@ public class GameState implements Cloneable{
     public Player getCurrentPlayer(){
         return currentPlayer;
     }
-    //Stone is only used for the color
+
     private void findJumps(List<JumpAction> possibleJumps, JumpAction jump, int from, int[] directions){
         boolean deadEnd = true;
-        //TODO: KING GETS STUCK IN A LOOP HERE SINCE IT CAN BACKTRACK
+
         for(int direction : directions){
             //clone the jump so far
             if(canJump(jump.getStone(), from, direction)){
@@ -116,6 +116,7 @@ public class GameState implements Cloneable{
 
     private boolean canJump(Stone stone, int from, int direction){
         int target = from + direction;
+
         if(RuleEnforcer.isOutOfBounds(target) || !RuleEnforcer.isOnDiagonal(from, target)){
             return false;
         }
@@ -124,12 +125,7 @@ public class GameState implements Cloneable{
         }
         if(board.isPositionOccupied(target) && !board.getStoneByPosition(target).getPlayerColor().equals(stone.getPlayerColor())){
             target += direction;
-            if(board.isPositionOccupied(target)){
-                return false;
-            }
-            else{
-                return true;
-            }
+            return !board.isPositionOccupied(target);
         }
         return false;
     }
@@ -161,7 +157,7 @@ public class GameState implements Cloneable{
             return false;
         }
     }
-
+    @Override
     public GameState clone(){
         try {
             GameState clonedState = (GameState) super.clone();

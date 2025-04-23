@@ -249,7 +249,7 @@ public class GameBoardModel implements Cloneable, EngineSubject {
             return board[AppConstants.ROW[position]][AppConstants.COL[position]] != null;
         }
     }
-    //TODO: DO SOMETHING HERE
+    //TODO: Remove
     @Override
     public void notifyUpdateUI() {
         //
