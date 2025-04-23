@@ -48,6 +48,7 @@ public class GameBoardViewGroup extends ViewGroup {
         for(int i = 0; i < AppConstants.NO_TILES; i++){
             TileView tile = new TileView(this.getContext(), i);
             addView(tile);
+            tile.setId(i);
             tile.setOnClickListener(listener);
         }
     }
@@ -99,6 +100,20 @@ public class GameBoardViewGroup extends ViewGroup {
     public void highlightTile(TileView tile, boolean toggle){
         tile.setSelected(toggle);
         tile.invalidate();
+    }
+
+    public void markJumpableTile(int position, boolean toggle){
+        TileView tile = findViewById(position);
+        tile.setJumpable(true);
+        tile.invalidate();
+    }
+
+    public void resetSelection(){
+        for(int i = 0; i < AppConstants.NO_TILES; i++){
+            TileView tile = findViewById(i);
+            tile.reset();
+            tile.invalidate();
+        }
     }
 
     public void updateUI(){

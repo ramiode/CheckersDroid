@@ -198,6 +198,11 @@ public class GameBoardModel implements Cloneable, EngineSubject {
         for(int x : path){
             MoveAction move = new MoveAction(playerStone.getPosition(), x, jump.getActingPlayer(), playerStone);
             executeMove(playerStone, move.from, move.to);
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
             System.out.println("MOVING FROM : " +move.from + " TO " + move.to);
 
             //delay updates to UI??
@@ -207,6 +212,11 @@ public class GameBoardModel implements Cloneable, EngineSubject {
             removeStone(stone);
             if(observers.size() != 0){
                 observers.forEach(e -> e.updateRemoveStoneFromUI(stone));
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
             }
         }
 

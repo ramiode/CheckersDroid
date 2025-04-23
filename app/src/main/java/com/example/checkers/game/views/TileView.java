@@ -16,6 +16,7 @@ import com.example.checkers.utils.AppConstants;
 public class TileView extends ComponentView {
     private final int pos;
     private boolean selected;
+    private boolean showJumpable;
     private final Paint paint;
 
     /**
@@ -39,6 +40,10 @@ public class TileView extends ComponentView {
         }
     }
 
+    public void setJumpable(boolean toggle){
+        showJumpable = toggle;
+    }
+
     public boolean getSelected(){
         return selected;
     }
@@ -57,8 +62,17 @@ public class TileView extends ComponentView {
             paint.setColor(tileColour);
         }
         canvas.drawRect(new Rect(0, 0, getWidth(), getHeight()), paint);
+
+        if(showJumpable){
+            paint.setColor(AppConstants.MAGENTA);
+            canvas.drawCircle(getWidth()/2f, getHeight()/2f, getWidth()/10f, paint);
+        }
     }
 
+    public void reset(){
+        showJumpable = false;
+        selected = false;
+    }
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec){
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
