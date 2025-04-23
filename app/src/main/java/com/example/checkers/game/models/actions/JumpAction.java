@@ -96,6 +96,7 @@ public class JumpAction extends Action implements Cloneable {
 
     @Override
     public JumpAction clone(){
+        //clone getstone?
        return new JumpAction(getActingPlayer(), getStone(), new LinkedList<>(path), captured.stream().map(Stone::clone).collect(Collectors.toCollection(LinkedList::new)));
     }
 

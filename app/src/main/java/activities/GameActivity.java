@@ -54,12 +54,13 @@ public class GameActivity extends AppCompatActivity implements Observer {
      *                           recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
      */
 
-    //TODO: Controller thread?
+    //TODO: Thread for click listener?
     //TODO: Clean up the listener code by creating a new listener type.
     //TODO: Clean up this whole class
     //TODO: Go through all classes and make them not rely on hard-coded variables, especially GameState class, GameActivity, and GameEngine
     //TODO: Fix memory leak issues related to cloning.
     //TODO: Start on the AI models and logging data
+    //TODO: Add quitting game thread and disposing of waste when going in and out of GameActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -121,9 +122,10 @@ public class GameActivity extends AppCompatActivity implements Observer {
         mainLayout.addView(gameBoardViewGroup);
         //Model components
 
-        playerOne = new HumanPlayer(true, "One");
+        playerOne = new MachinePlayer(true, "One", true);
         playerTwo = new MachinePlayer(false, "Two", true);
         playerTwo.addObserver(this);
+        playerOne.addObserver(this);
 
         engine = new GameEngine(playerOne, playerTwo);
         engine.addObserver(this);

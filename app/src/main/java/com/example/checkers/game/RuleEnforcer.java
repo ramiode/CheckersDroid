@@ -10,15 +10,18 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
+
 public class RuleEnforcer {
-    public static boolean isMoveValid(final Action action, GameState state) {
+    private static final int LEFT_DIAGONAL = 7;
+    private static final int RIGHT_DIAGONAL = 9;
+    public static boolean isMoveValid(final Action action, final GameState state) {
         //List<JumpAction> jumps = state.getJumpActions();
 
         if(action instanceof MoveAction){
             return isMoveValid((MoveAction) action, state.getBoard(), false);
         }
         else if(action instanceof JumpAction){
-            return isJumpValid((JumpAction) action, state.clone());
+            return isJumpValid((JumpAction) action, state);
         }
         else{
             return false;
@@ -35,20 +38,21 @@ public class RuleEnforcer {
             return isMoveValid;
         }
         else{
+            //TODO: Rework
             //change to not update state?
-            state.updateStateWithPartialMove(firstJump);
+            //state.updateStateWithPartialMove(firstJump);
             boolean areAllMovesValid = IntStream.range(1, positions.size())
                     .mapToObj(i -> new MoveAction(positions.get(i - 1), positions.get(i), jump.getActingPlayer(), jump.getStone()))
                     .allMatch(move -> {
                         boolean valid = isMoveValid(move, state.getBoard(), true);
                         if (valid) {
-                            state.updateStateWithPartialMove(move);
+                            //state.updateStateWithPartialMove(move);
                         }
                         return valid;
                     });
-            boolean noJumpsRemaining = state.getJumpActions().size() == 0;
+            //boolean noJumpsRemaining = state.getJumpActions().size() == 0;
 
-            return isMoveValid && areAllMovesValid && noJumpsRemaining;
+            return isMoveValid && areAllMovesValid;
         }
     }
     private static boolean isMoveValid(MoveAction move, GameBoardModel model, boolean isJump) {
@@ -63,7 +67,7 @@ public class RuleEnforcer {
             return false;
         } else if(!isOnDiagonal(move.from, move.to)){
             return false;
-        } else if (!(Math.abs(stepDistance) == 7 * multiplier || Math.abs(stepDistance) == 9 * multiplier)) {
+        } else if (!(Math.abs(stepDistance) == LEFT_DIAGONAL * multiplier || Math.abs(stepDistance) == RIGHT_DIAGONAL * multiplier)) {
             return false;
         } else if(Arrays.stream(move.getStone().getDirections()).noneMatch(e -> e * multiplier == stepDistance)){
             return false;

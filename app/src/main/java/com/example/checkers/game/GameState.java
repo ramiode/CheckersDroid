@@ -12,13 +12,12 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-
+//Memory leak occurs when multijump is available for machine player
 public class GameState implements Cloneable{
     private GameBoardModel board;
     private final Player playerOne;
     private final Player playerTwo;
     private Player currentPlayer;
-    //TODO: Fix the memory leak in findJumps
     public GameState(GameBoardModel board, Player playerOne, Player playerTwo, Player currentPlayer){
         this.board = board.clone();
         //have to clone players too
@@ -47,16 +46,14 @@ public class GameState implements Cloneable{
     }
     private List<MoveAction> generateMoveActions(List<Stone> stones){
         LinkedList<MoveAction> possibleMoves = new LinkedList<>();
-        Iterator itr = stones.iterator();
 
-        while(itr.hasNext()){
-            Stone stone = (Stone) itr.next();
+        for (Stone stone : stones) {
             int from = stone.getPosition();
             int[] directions = stone.getDirections();
 
-            for(int i = 0; i < directions.length; i++){
-                MoveAction move = new MoveAction(from, from + directions[i], currentPlayer, stone);
-                if(RuleEnforcer.isMoveValid(move, this)){
+            for (int direction : directions) {
+                MoveAction move = new MoveAction(from, from + direction, currentPlayer, stone);
+                if (RuleEnforcer.isMoveValid(move, this)) {
                     possibleMoves.add(move);
                 }
             }
@@ -69,16 +66,14 @@ public class GameState implements Cloneable{
     }
     private List<JumpAction> generateJumpActions(List<Stone> stones){
         LinkedList<JumpAction> possibleMoves = new LinkedList<>();
-        Iterator<Stone> itr = stones.iterator();
 
-        while(itr.hasNext()){
-            Stone stone = itr.next();
+        for (Stone stone : stones) {
             int[] directions = stone.getDirections();
             int from = stone.getPosition();
 
             boolean firstJumpable = canJump(stone, from, directions);
 
-            if(!firstJumpable){
+            if (!firstJumpable) {
                 continue;
             }
 
@@ -94,23 +89,27 @@ public class GameState implements Cloneable{
     //Stone is only used for the color
     private void findJumps(List<JumpAction> possibleJumps, JumpAction jump, int from, int[] directions){
         boolean deadEnd = true;
-        //TODO: KING MIGHT GET STUCK IN A LOOP HERE SINCE IT CAN BACKTRACK
+        //TODO: KING GETS STUCK IN A LOOP HERE SINCE IT CAN BACKTRACK
         for(int direction : directions){
             //clone the jump so far
             if(canJump(jump.getStone(), from, direction)){
                 int enemyStonePos = from + direction;
                 int targetPos = from + direction * 2;
-                //needs to add unique sequences of jumps only
-                JumpAction updatedJump = jump.clone();
-                updatedJump.addCapturedStone(board.getStoneByPosition(enemyStonePos));
-                updatedJump.addJumpPosition(targetPos);
 
-                findJumps(possibleJumps, updatedJump, targetPos, directions);
+                Stone enemyStone = board.getStoneByPosition(enemyStonePos);
+                if(jump.getCapturedStones().stream().noneMatch(s -> s.getId() == enemyStone.getId())) {
+                    //needs to add unique sequences of jumps only
+                    JumpAction updatedJump = jump.clone();
+                    updatedJump.addCapturedStone(enemyStone);
+                    updatedJump.addJumpPosition(targetPos);
 
-                deadEnd = false;
+                    findJumps(possibleJumps, updatedJump, targetPos, directions);
+
+                    deadEnd = false;
+                }
             }
         }
-        if(deadEnd && !jump.isEmpty() && RuleEnforcer.isMoveValid(jump, this)){
+        if(deadEnd && !jump.isEmpty() && RuleEnforcer.isMoveValid(jump, this.clone())){
             possibleJumps.add(jump);
         }
     }
@@ -151,7 +150,16 @@ public class GameState implements Cloneable{
     }
 
     public boolean isTerminal(){
-        return true;
+        //TODO: Add draw if no captures have been made in x amount of moves?
+        if(board.getPlayerOneStones().size() == 0 || board.getPlayerTwoStones().size() == 0){
+            return true;
+        }
+        else if(generateLegalActions().size() == 0){
+            return true;
+        }
+        else{
+            return false;
+        }
     }
 
     public GameState clone(){

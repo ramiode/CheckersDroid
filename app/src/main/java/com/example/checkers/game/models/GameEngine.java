@@ -55,8 +55,11 @@ public class GameEngine implements EngineSubject {
             while(isRunning){
                 latch = new CountDownLatch(1);
                 try {
+                    if(currentState.isTerminal()){
+                        gameLogger.printSystemText(String.format("Game over: %s wins.", turnToPlay.getName()), observers.get(0));
+                        break;
+                    }
                     turnToPlay = currentState.getCurrentPlayer();
-
                     gameLogger.printSystemText(String.format("Waiting for player %s...\n", turnToPlay.getName()), observers.get(0));
 
                     if(!turnToPlay.isHuman()){
@@ -71,11 +74,13 @@ public class GameEngine implements EngineSubject {
                     Action nextMove = turnToPlay.getNextMove();
 
                     //gameBoardModel.executeAction(nextMove, turnToPlay.getSelectedStone());
+
                     currentState.updateStateWithAction(turnToPlay.getSelectedStone(), nextMove);
                     gameLogger.printAction(nextMove, observers.get(0));
                     observers.get(0).updateMoveStoneInUI(turnToPlay.getSelectedStone());
                     turnToPlay.setSelectedStone(null);
                     printBoard();
+
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {

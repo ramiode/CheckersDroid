@@ -12,7 +12,7 @@ public class Stone implements Cloneable{
     private String player;
     private int[] directions;
     private volatile boolean isKing;
-    private int id;
+    private final int id;
 
     /**
      * Instantiates the member variables and generates a unique id for the stone.
