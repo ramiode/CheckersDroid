@@ -16,9 +16,9 @@ public abstract class Action {
      * Constructor which takes the player who is performing the action and the selected stone.
      *
      * @param player the acting player
-     * @param stone the selected stone
+     * @param stone  the selected stone
      */
-    public Action(Player player, Stone stone){
+    public Action(Player player, Stone stone) {
         this.actingPlayer = player;
         this.currentStone = stone;
     }
@@ -28,7 +28,7 @@ public abstract class Action {
      *
      * @return the acting player
      */
-    public Player getActingPlayer(){
+    public Player getActingPlayer() {
         return actingPlayer;
     }
 
@@ -37,14 +37,24 @@ public abstract class Action {
      *
      * @return the stone that is being used for the action
      */
-    public Stone getStone(){
+    public Stone getStone() {
         return currentStone;
     }
 
+    /**
+     * Generates a message to describe the next action taken by the player.
+     *
+     * @return a description of the action
+     */
     @Override
-    public String toString(){
+    public String toString() {
         return "Player " + actingPlayer.getName() + " " + getActionMessage();
     }
 
+    /**
+     * Implemented in concrete subclasses to define their custom action messages.
+     *
+     * @return a string representing the action
+     */
     public abstract String getActionMessage();
 }

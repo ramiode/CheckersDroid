@@ -1,15 +1,11 @@
 package com.example.checkers.game.models.players;
 
 import com.example.checkers.AgentSubject;
-import com.example.checkers.Observer;
-import com.example.checkers.game.GameState;
+import com.example.checkers.Controller;
 import com.example.checkers.game.models.actions.Action;
-import com.example.checkers.game.models.actions.JumpAction;
-import com.example.checkers.game.models.actions.MoveAction;
 import com.example.checkers.game.models.pieces.Stone;
 import com.example.checkers.utils.AppConstants;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -21,7 +17,7 @@ import java.util.List;
 public abstract class Player implements AgentSubject {
     private final String name;
     private final String color;
-    protected List<Observer> controllers;
+    protected List<Controller> controllers;
     private volatile Action selectedAction;
     protected volatile Stone currentlySelectedStone;
 
@@ -30,7 +26,7 @@ public abstract class Player implements AgentSubject {
      *
      * @param isRed Set as true if player should be red
      */
-    public Player(boolean isRed, String name){
+    public Player(boolean isRed, String name) {
         this.color = isRed ? AppConstants.PLAYER_RED : AppConstants.PLAYER_WHITE;
         this.name = name;
         controllers = new LinkedList<>();
@@ -38,17 +34,19 @@ public abstract class Player implements AgentSubject {
 
     /**
      * Get the assigned color for the player.
+     *
      * @return the color
      */
-    public String getColor(){
+    public String getColor() {
         return color;
     }
 
     /**
      * Retrieves the next move the player has selected
+     *
      * @return the move to be executed
      */
-    public Action getNextMove(){
+    public Action getNextMove() {
         return selectedAction;
     }
 
@@ -64,7 +62,7 @@ public abstract class Player implements AgentSubject {
      *
      * @param action the action to be set
      */
-    public void setNextMove(Action action){
+    public void setNextMove(Action action) {
         selectedAction = action;
     }
 
@@ -73,8 +71,8 @@ public abstract class Player implements AgentSubject {
      *
      * @param stone the stone to be selected
      */
-    public void setSelectedStone(Stone stone){
-       currentlySelectedStone = stone;
+    public void setSelectedStone(Stone stone) {
+        currentlySelectedStone = stone;
     }
 
     /**
@@ -82,7 +80,7 @@ public abstract class Player implements AgentSubject {
      *
      * @return the stone that the player has selected
      */
-    public Stone getSelectedStone(){
+    public Stone getSelectedStone() {
         return currentlySelectedStone;
     }
 
@@ -91,30 +89,35 @@ public abstract class Player implements AgentSubject {
      */
     @Override
     public void notifyMoveMade() {
-        controllers.forEach(Observer::updateMoveMade);
+        controllers.forEach(Controller::updateMoveMade);
     }
 
     /**
      * Adds an observer which can be notified later.
      *
-     * @param o the observer to be added
+     * @param c the observer to be added
      */
     @Override
-    public void addObserver(Observer o) {
-       controllers.add(o);
+    public void addController(Controller c) {
+        controllers.add(c);
     }
 
     /**
      * Removes an observer from the observers list.
      *
-     * @param o the observer to be removed
+     * @param c the observer to be removed
      */
     @Override
-    public void removeObserver(Observer o) {
-        controllers.remove(o);
+    public void removeController(Controller c) {
+        controllers.remove(c);
     }
 
-    public String getName(){
+    /**
+     * Getter for the name of this Player.
+     *
+     * @return the name of this player
+     */
+    public String getName() {
         return name;
     }
 }

@@ -15,17 +15,17 @@ import java.util.Random;
  * @author Ramiar Odendaal
  */
 //TODO: Implement the AI here
-public class MachinePlayer extends Player{
+public class MachinePlayer extends Player {
     private final Agent aiModel;
 
     /**
      * Sets the AI model and constructs the player.
      *
-     * @param isRed true if player is red, false otherwise
-     * @param name the name of the player
+     * @param isRed     true if player is red, false otherwise
+     * @param name      the name of the player
      * @param isMinimax true if player should use minimax model, false otherwise
      */
-    public MachinePlayer(boolean isRed, String name, boolean isMinimax){
+    public MachinePlayer(boolean isRed, String name, boolean isMinimax) {
         super(isRed, name);
         aiModel = isMinimax ? new MinimaxAgent() : new MCTSAgent();
     }
@@ -35,11 +35,12 @@ public class MachinePlayer extends Player{
      *
      * @param state the current state of the game
      */
-    public void generateAction(GameState state){
+    public void generateAction(GameState state) {
         Random r = new Random();
         List<Action> actions = state.generateLegalActions();
         int random = Math.abs(r.nextInt() % actions.size());
         Action action = actions.get(random);
+        //Action action = aiModel.getNextMove();
         setSelectedStone(action.getStone());
         setNextMove(action);
         notifyMoveMade();

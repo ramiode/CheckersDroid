@@ -1,7 +1,7 @@
 package com.example.checkers.game.models;
 
-import com.example.checkers.EngineSubject;
-import com.example.checkers.Observer;
+import com.example.checkers.Controller;
+import com.example.checkers.Subject;
 import com.example.checkers.game.models.actions.Action;
 import com.example.checkers.game.models.actions.MoveAction;
 import com.example.checkers.game.models.pieces.Stone;
@@ -20,19 +20,19 @@ import java.util.stream.Collectors;
  *
  * @author Ramiar Odendaal
  */
-public class GameBoardModel implements Cloneable, EngineSubject {
+public class GameBoardModel implements Cloneable, Subject {
 
     private Stone[][] board;
-    private List<Observer> observers;
+    private List<Controller> controllers;
     private List<Stone> playerOneStones;
     private List<Stone> playerTwoStones;
 
     /**
-     * Constructor that initializes an empty board to be filled later.
+     * Constructor that initializes an empty board array to be filled later.
      */
     public GameBoardModel() {
         board = new Stone[8][8];
-        observers = new LinkedList<>();
+        controllers = new LinkedList<>();
     }
 
     /**
@@ -40,52 +40,68 @@ public class GameBoardModel implements Cloneable, EngineSubject {
      *
      * @param model the model which will have its board duplicated
      */
-    public GameBoardModel(GameBoardModel model){
+    public GameBoardModel(GameBoardModel model) {
         board = new Stone[8][8];
-        for(int i = 0; i < 8; i++){
-            for(int j = 0; j < 8; j++){
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
                 board[i][j] = model.board[i][j] != null ? model.board[i][j].clone() : null;
             }
         }
-        observers = new LinkedList<>();
-        //TODO: Does it matter what type of list?
+        controllers = new LinkedList<>();
+
         playerOneStones = model.getPlayerOneStones().stream().map(Stone::clone).collect(Collectors.toList());
         playerTwoStones = model.getPlayerTwoStones().stream().map(Stone::clone).collect(Collectors.toList());
     }
 
     /**
-     * Places each stone in the provided list of stones.
+     * Initializes each player's stones, places them in a list, and places them on the board in the starting configuration.
      *
      * @param isPlayerOneRed true if player one plays as red
      */
     public void initializeStones(boolean isPlayerOneRed) {
         playerOneStones = initializePieces(isPlayerOneRed);
         playerTwoStones = initializePieces(!isPlayerOneRed);
-
     }
 
-    public List<Stone> getPlayerOneStones(){
+    /**
+     * Getter for the list containing player one's held stones.
+     *
+     * @return the list containing all stones belonging to player one that are currently on the board
+     */
+    public List<Stone> getPlayerOneStones() {
         return playerOneStones;
     }
 
-    public List<Stone> getPlayerTwoStones(){
+    /**
+     * Getter for the list containing player two's held stones.
+     *
+     * @return the list containing all stones belonging to player two that are currently on the board
+     */
+    public List<Stone> getPlayerTwoStones() {
         return playerTwoStones;
     }
-    private List<Stone> initializePieces(boolean isRed){
+
+    /**
+     * Helper method that initializes the starting stones for a player. Used at the beginning of the game.
+     *
+     * @param isRed true if the player is playing as red
+     * @return A list containing all initialized and placed stones for the player
+     */
+    private List<Stone> initializePieces(boolean isRed) {
         List<Stone> stones = new ArrayList<>();
         int start = isRed ? 40 : 0;
         int end = isRed ? 63 : 24;
         String color = isRed ? AppConstants.PLAYER_RED : AppConstants.PLAYER_WHITE;
-        for(int i = start; i < end; i++){
+        for (int i = start; i < end; i++) {
             //if even row then place in odd columns
             Stone stone;
-            if((i & 1) % 2 == 1 && (i >> 3) % 2 == 0){
+            if ((i & 1) % 2 == 1 && (i >> 3) % 2 == 0) {
                 stone = new Stone(i, color);
                 stones.add(stone);
                 placeStone(stone, AppConstants.ROW[stone.getPosition()], AppConstants.COL[stone.getPosition()]);
             }
             //if odd row then place in even columns
-            else if((i >> 3) % 2 == 1 && (i & 1) % 2 == 0){
+            else if ((i >> 3) % 2 == 1 && (i & 1) % 2 == 0) {
                 stone = new Stone(i, color);
                 stones.add(stone);
                 placeStone(stone, AppConstants.ROW[stone.getPosition()], AppConstants.COL[stone.getPosition()]);
@@ -107,13 +123,14 @@ public class GameBoardModel implements Cloneable, EngineSubject {
 
     /**
      * Moves an existing stone from one position to a new one.
+     * Checks if the stone can be upgraded to a king after moving.
      *
-     * @param stone     the stone to be moved
+     * @param stone       the stone to be moved
      * @param oldPosition the previous position of the stone on the board
      * @param newPosition the new position of the stone on the board
      */
     private void executeMove(Stone stone, int oldPosition, int newPosition) {
-        //TODO: Fix weirdness
+
         boolean isRed = stone.getPlayerColor().equals(AppConstants.PLAYER_RED);
         List<Stone> stones = isRed ? playerOneStones : playerTwoStones;
 
@@ -126,6 +143,7 @@ public class GameBoardModel implements Cloneable, EngineSubject {
         board[targetRow][targetCol] = stone;
         stone.setPosition(newPosition);
 
+        //Checks if the opponent's back row has been reached after the move
         int[] opponentRow = isRed ? AppConstants.WHITE_ROW : AppConstants.RED_ROW;
         boolean upgradeToKing = newPosition <= opponentRow[1] && newPosition >= opponentRow[0];
 
@@ -134,17 +152,18 @@ public class GameBoardModel implements Cloneable, EngineSubject {
                 .findFirst()
                 .ifPresent(element -> {
                     element.setPosition(newPosition);
-                    if(upgradeToKing){
+                    if (upgradeToKing) {
                         element.upgradeToKing();
                         stone.upgradeToKing();
                     }
                 });
 
-        observers.forEach(e -> e.updateMoveStoneInUI(stone));
+        controllers.forEach(e -> e.updateMoveStoneInUI(stone));
     }
 
     /**
      * Retrieves the stone at the specified position
+     *
      * @param position the position of the stone
      * @return the desired stone (if it exists)
      */
@@ -156,14 +175,13 @@ public class GameBoardModel implements Cloneable, EngineSubject {
      * Executes a MoveAction on the board.
      *
      * @param action the action to be executed
-     * @param stone the stone to be moved
+     * @param stone  the stone to be moved
      */
     public void executeAction(Action action, Stone stone) {
-        if(action instanceof MoveAction){
+        if (action instanceof MoveAction) {
             MoveAction move = (MoveAction) action;
             executeMove(stone, move.from, move.to);
-        }
-        else if(action instanceof JumpAction){
+        } else if (action instanceof JumpAction) {
             executeJump((JumpAction) action);
         }
     }
@@ -173,29 +191,27 @@ public class GameBoardModel implements Cloneable, EngineSubject {
      *
      * @param stone the stone to be removed
      */
-    private void removeStone(Stone stone){
+    private void removeStone(Stone stone) {
         board[AppConstants.ROW[stone.getPosition()]][AppConstants.COL[stone.getPosition()]] = null;
-        if(stone.getPlayerColor().equals(AppConstants.PLAYER_RED)){
+        if (stone.getPlayerColor().equals(AppConstants.PLAYER_RED)) {
             playerOneStones.removeIf(element -> element.getId() == stone.getId());
-        }
-        else{
+        } else {
             playerTwoStones.removeIf(element -> element.getId() == stone.getId());
         }
     }
+
     /**
-     * Executes a jump move.
+     * Executes a jump move by moving the stone to each new position and removing the captured enemy stones.
+     *
      * @param jump the jump action to be executed
      */
-    private void executeJump(JumpAction jump){
+    private void executeJump(JumpAction jump) {
         List<Stone> capturedStones = jump.getCapturedStones();
         List<Integer> path = jump.getPositions();
 
         Stone playerStone = getStoneByPosition(jump.getStone().getPosition());
-        System.out.println("STONE ON BOARD: " + playerStone);
-        System.out.println("STONE IN JUMP: " + jump.getStone());
-        System.out.println("POSITION: " + jump.getPositions());
-        //Move the stone
-        for(int x : path){
+
+        for (int x : path) {
             MoveAction move = new MoveAction(playerStone.getPosition(), x, jump.getActingPlayer(), playerStone);
             executeMove(playerStone, move.from, move.to);
             try {
@@ -203,15 +219,12 @@ public class GameBoardModel implements Cloneable, EngineSubject {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-            System.out.println("MOVING FROM : " +move.from + " TO " + move.to);
-
-            //delay updates to UI??
         }
 
-        for(Stone stone : capturedStones){
+        for (Stone stone : capturedStones) {
             removeStone(stone);
-            if(observers.size() != 0){
-                observers.forEach(e -> e.updateRemoveStoneFromUI(stone));
+            if (controllers.size() != 0) {
+                controllers.forEach(e -> e.updateRemoveStoneFromUI(stone));
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
@@ -219,10 +232,6 @@ public class GameBoardModel implements Cloneable, EngineSubject {
                 }
             }
         }
-
-
-
-        //notify UI that changes have been made
     }
 
     /**
@@ -231,7 +240,7 @@ public class GameBoardModel implements Cloneable, EngineSubject {
      * @return the cloned model
      */
     @Override
-    public GameBoardModel clone(){
+    public GameBoardModel clone() {
         return new GameBoardModel(this);
     }
 
@@ -241,37 +250,34 @@ public class GameBoardModel implements Cloneable, EngineSubject {
      * @param position the position on the board
      * @return true if the position is occupied; false otherwise
      */
-    public boolean isPositionOccupied(int position){
-        if(position > 63 || position < 0){
+    public boolean isPositionOccupied(int position) {
+        if (position > 63 || position < 0) {
             return true;
-        }
-        else{
+        } else {
             return board[AppConstants.ROW[position]][AppConstants.COL[position]] != null;
         }
     }
-    //TODO: Remove
+
+    /**
+     * @inheritDoc
+     */
     @Override
-    public void notifyUpdateUI() {
-        //
+    public void addController(Controller c) {
+        controllers.add(c);
     }
 
     /**
      * @inheritDoc
      */
     @Override
-    public void addObserver(Observer o) {
-        observers.add(o);
+    public void removeController(Controller c) {
+        controllers.remove(c);
     }
 
     /**
-     * @inheritDoc
+     * Prints a text representation of the board. Used for debugging only.
      */
-    @Override
-    public void removeObserver(Observer o) {
-        observers.remove(o);
-    }
-
-    public void printBoard(){
+    public void printBoard() {
         System.out.println("+++++++++++++++++++");
         System.out.println("  1 2 3 4 5 6 7 8");
         AtomicInteger i = new AtomicInteger();

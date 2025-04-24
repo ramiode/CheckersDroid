@@ -13,7 +13,7 @@ import android.widget.FrameLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-import com.example.checkers.Observer;
+import com.example.checkers.Controller;
 import com.example.checkers.R;
 import com.example.checkers.game.models.GameEngine;
 import com.example.checkers.game.models.actions.Action;
@@ -37,20 +37,11 @@ import java.util.Objects;
  *
  * @author Ramiar Odendaal
  */
-
-public class GameActivity extends AppCompatActivity implements Observer {
+public class GameActivity extends AppCompatActivity implements Controller {
     private GameBoardViewGroup gameBoardViewGroup;
     private GameEngine engine;
     private TileView previousTile;
     private TextView logText;
-
-    /**
-     * Initializes the activity and manages the models and views.
-     *
-     * @param savedInstanceState If the activity is being re-initialized after
-     *                           previously being shut down then this Bundle contains the data it most
-     *                           recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
-     */
 
     //TODO: Start on the AI models and logging data
     //TODO: Add quitting game thread and disposing of waste when going in and out of GameActivity
@@ -90,14 +81,13 @@ public class GameActivity extends AppCompatActivity implements Observer {
         logText = findViewById(R.id.textView2);
         logText.setText("");
         //Model components
-        //Move these to gameengine
         Player playerOne = new HumanPlayer(true, "One");
         Player playerTwo = new MachinePlayer(false, "Two", true);
-        playerTwo.addObserver(this);
+        playerTwo.addController(this);
         //playerOne.addObserver(this);
 
         engine = new GameEngine(playerOne, playerTwo);
-        engine.addObserver(this);
+        engine.addController(this);
 
         //Add StoneViews to the board
         gameBoardViewGroup.initializeStones(engine.getPlayerOneStones(), AppConstants.RED_STONE);
@@ -122,8 +112,8 @@ public class GameActivity extends AppCompatActivity implements Observer {
                     .filter(jump -> jump.getStone().getId() == currentStone.getId())
                     .map(JumpAction::getPositions)
                     .forEach(positionList -> {
-                        for(int i = 0; i < positionList.size(); i++){
-                            gameBoardViewGroup.markJumpableTile(positionList.get(i), true);
+                        for (int i = 0; i < positionList.size(); i++) {
+                            gameBoardViewGroup.markJumpableTile(positionList.get(i));
                         }
                     });
         }
@@ -150,20 +140,20 @@ public class GameActivity extends AppCompatActivity implements Observer {
 
             List<JumpAction> availableJumps = engine.getCurrentState().getJumpActions();
             int stepDistance = Math.abs(to - from);
-            Action move;
-            if(stepDistance > 9 && availableJumps.size() > 0){
-                move = createJumpAction(previouslySelectedStone, availableJumps, to);
+
+            Action action = null;
+            if (stepDistance > 9 && availableJumps.size() > 0) {
+                action = createJumpAction(previouslySelectedStone, availableJumps, to);
             }
-            else{
-                move = new MoveAction(previouslySelectedStone.getPosition(), currentTile.getPosition(), currentPlayer, previouslySelectedStone);
+            else if(availableJumps.size() == 0){
+                action = new MoveAction(previouslySelectedStone.getPosition(), currentTile.getPosition(), currentPlayer, previouslySelectedStone);
             }
 
-            if (Objects.equals(previouslySelectedStone.getPlayerColor(), currentPlayer.getColor()) && RuleEnforcer.isMoveValid(move, engine.getCurrentState())) {
-                currentPlayer.setNextMove(move);
+            if (Objects.equals(previouslySelectedStone.getPlayerColor(), currentPlayer.getColor()) && RuleEnforcer.isActionValid(action, engine.getCurrentState())) {
+                currentPlayer.setNextMove(action);
                 //Notify the waiting engine that a move has been made
                 engine.countDownLatch();
-            }
-            else {
+            } else {
                 //alert user that move could not be executed
             }
             resetSelection();
@@ -174,13 +164,22 @@ public class GameActivity extends AppCompatActivity implements Observer {
         }
     }
 
-    public JumpAction createJumpAction(Stone stone, List<JumpAction> jumps, int position){
+    /**
+     * Helper method that creates a suitable jump action after a user selection.
+     *
+     * @param stone    The selected stone
+     * @param jumps    A list of all possible jumps
+     * @param position The position to move to
+     * @return a JumpAction matching the user's selected action
+     */
+    private JumpAction createJumpAction(Stone stone, List<JumpAction> jumps, int position) {
         //TODO: Check what happens when multiple jumps are available
         return jumps.stream()
-                .filter(jump -> jump.getPositions().get(jump.getPositions().size()-1) == position && jump.getStone().getId() == stone.getId())
+                .filter(jump -> jump.getPositions().get(jump.getPositions().size() - 1) == position && jump.getStone().getId() == stone.getId())
                 .findFirst()
                 .orElse(null);
     }
+
     /**
      * Helper method that resets all changes brought about by selecting tiles on the screen.
      */
@@ -189,6 +188,9 @@ public class GameActivity extends AppCompatActivity implements Observer {
         previousTile = null;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void updateRemoveStoneFromUI(Stone stone) {
         runOnUiThread(() -> {
@@ -199,26 +201,26 @@ public class GameActivity extends AppCompatActivity implements Observer {
             }, 500);
         });
     }
+
+    /**
+     * @inheritDoc
+     */
     @Override
-    public void updateMoveStoneInUI(Stone stone){
+    public void updateMoveStoneInUI(Stone stone) {
         runOnUiThread(() -> {
             StoneView s = gameBoardViewGroup.findStoneById(stone.getId());
-            if(stone.getKingStatus()){
-                s.setKing(true);
+            if (stone.getKingStatus()) {
+                s.setKing();
                 s.invalidate();
             }
             s.setPosition(stone.getPosition());
             gameBoardViewGroup.requestLayout();
         });
     }
-    //remove
-    @Override
-    public void updateTileInUI(TileView tile) {
-        runOnUiThread(() -> {
-            //gameBoardViewGroup.toggleTile(tile);
-        });
-    }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void updateText(String s, int color) {
         runOnUiThread(() -> {
@@ -229,12 +231,23 @@ public class GameActivity extends AppCompatActivity implements Observer {
         });
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void updateMoveMade() {
         engine.countDownLatch();
     }
 
+    /**
+     * Inner class that defines a custom click listener for the board.
+     */
     private class OnBoardClickListener implements View.OnClickListener {
+        /**
+         * Handles user selection in the case of a human player. Utilizes helper methods in the outer class.
+         *
+         * @param v The view that was clicked.
+         */
         @Override
         public void onClick(View v) {
             Player currentPlayer = engine.getTurnToPlay();

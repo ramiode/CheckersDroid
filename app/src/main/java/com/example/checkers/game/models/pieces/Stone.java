@@ -7,7 +7,7 @@ import com.example.checkers.utils.AppConstants;
  *
  * @author Ramiar Odendaal
  */
-public class Stone implements Cloneable{
+public class Stone implements Cloneable {
     private int position;
     private String player;
     private int[] directions;
@@ -17,10 +17,10 @@ public class Stone implements Cloneable{
     /**
      * Instantiates the member variables and generates a unique id for the stone.
      *
-     * @param position the stone's position on the board
+     * @param position    the stone's position on the board
      * @param playerColor the player that owns the stone
      */
-    public Stone(int position, String playerColor){
+    public Stone(int position, String playerColor) {
         this.position = position;
         this.player = playerColor;
         int code = hashCode();
@@ -33,14 +33,16 @@ public class Stone implements Cloneable{
 
     /**
      * Returns the stone's position on the board (0-63)
+     *
      * @return the position of the stone
      */
-    public int getPosition(){
+    public int getPosition() {
         return position;
     }
 
     /**
      * Updates the stone's position on the board (0-63)
+     *
      * @param position the new position
      */
     public void setPosition(int position) {
@@ -52,7 +54,7 @@ public class Stone implements Cloneable{
      *
      * @return the unique id
      */
-    public int getId(){
+    public int getId() {
         return id;
     }
 
@@ -61,26 +63,41 @@ public class Stone implements Cloneable{
      *
      * @return the stone's color
      */
-    public String getPlayerColor(){
+    public String getPlayerColor() {
         return player;
     }
 
     /**
      * Upgrades this stone to be a King. Kings can move backwards as well as forwards.
      */
-    public void upgradeToKing(){
+    public void upgradeToKing() {
         isKing = true;
         directions = AppConstants.KING_DIRECTIONS;
     }
 
-    public boolean getKingStatus(){
+    /**
+     * Used to check if this Stone is a king.
+     *
+     * @return true only if this stone is a king
+     */
+    public boolean getKingStatus() {
         return isKing;
     }
-    public int[] getDirections(){
+
+    /**
+     * Return the valid directions available to this stone. A stone can only move forward from its starting position, unless it has been upgraded to a king.
+     *
+     * @return the valid directions for this stone
+     */
+    public int[] getDirections() {
         return directions;
     }
+
+    /**
+     * @inheritDoc
+     */
     @Override
-    public Stone clone(){
+    public Stone clone() {
         try {
             Stone clonedStone = (Stone) super.clone();
             return clonedStone;

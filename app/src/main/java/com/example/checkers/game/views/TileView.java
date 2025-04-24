@@ -23,7 +23,7 @@ public class TileView extends ComponentView {
      * Instantiates a new TileView with the specified position on the board.
      *
      * @param context the context of this view
-     * @param pos the position of this view
+     * @param pos     the position of this view
      */
     public TileView(Context context, int pos) {
         super(context, pos);
@@ -34,47 +34,49 @@ public class TileView extends ComponentView {
     }
 
     @Override
-    public void setSelected(boolean selected){
-        if(this.selected != selected){
+    public void setSelected(boolean selected) {
+        if (this.selected != selected) {
             this.selected = selected;
         }
     }
 
-    public void setJumpable(boolean toggle){
-        showJumpable = toggle;
-    }
-
-    public boolean getSelected(){
-        return selected;
+    /**
+     * Marks this tile as jumpable.
+     */
+    public void setJumpable() {
+        showJumpable = true;
     }
 
     @SuppressLint("DrawAllocation")
     @Override
-    protected void onDraw(Canvas canvas){
+    protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         //Tile color is decided based on the tile's position in the board. On even rows, even columns are white. On odd rows, even columns are black.
         final int tileColour = (pos & 1) == 0 ? (((pos >> 3) & 1) == 0 ? AppConstants.WHITE : AppConstants.BLACK) : (((pos >> 3) & 1) == 0 ? AppConstants.BLACK : AppConstants.WHITE);
 
-        if(selected){
+        if (selected) {
             paint.setColor(AppConstants.MAGENTA);
-        }
-        else{
+        } else {
             paint.setColor(tileColour);
         }
         canvas.drawRect(new Rect(0, 0, getWidth(), getHeight()), paint);
 
-        if(showJumpable){
+        if (showJumpable) {
             paint.setColor(AppConstants.MAGENTA);
-            canvas.drawCircle(getWidth()/2f, getHeight()/2f, getWidth()/10f, paint);
+            canvas.drawCircle(getWidth() / 2f, getHeight() / 2f, getWidth() / 10f, paint);
         }
     }
 
-    public void reset(){
+    /**
+     * Resets this tile so it has no additional parameters set.
+     */
+    public void reset() {
         showJumpable = false;
         selected = false;
     }
+
     @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec){
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
         int width = MeasureSpec.getSize(widthMeasureSpec);

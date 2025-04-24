@@ -1,12 +1,12 @@
 package com.example.checkers.game.models;
 
-import com.example.checkers.EngineSubject;
+import com.example.checkers.Subject;
 import com.example.checkers.game.GameState;
 import com.example.checkers.game.models.actions.Action;
 import com.example.checkers.game.models.pieces.Stone;
 import com.example.checkers.game.models.players.HumanPlayer;
 import com.example.checkers.game.models.players.MachinePlayer;
-import com.example.checkers.Observer;
+import com.example.checkers.Controller;
 import com.example.checkers.game.models.players.Player;
 import com.example.checkers.utils.DataLogger;
 
@@ -14,7 +14,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-public class GameEngine implements EngineSubject {
+public class GameEngine implements Subject {
     //player one is red
     private final Player playerOne;
     //player two is white
@@ -24,7 +24,7 @@ public class GameEngine implements EngineSubject {
     private CountDownLatch latch;
     private volatile boolean isRunning;
     private GameState currentState;
-    private final List<Observer> observers;
+    private final List<Controller> controllers;
 
     /**
      * Constructs the game engine with starting players and an initialized board.
@@ -33,12 +33,13 @@ public class GameEngine implements EngineSubject {
      * @param playerTwo The white player
      */
     public GameEngine(Player playerOne, Player playerTwo) {
+        //TODO: Game engine should define the players
         this.playerOne = new HumanPlayer(true, "Chad");
         this.playerTwo = new MachinePlayer(false, "Brad", true);
         GameBoardModel model = new GameBoardModel();
         model.initializeStones(true);
         this.currentState = new GameState(model, playerOne, playerTwo, playerOne);
-        observers = new LinkedList<>();
+        controllers = new LinkedList<>();
         gameLogger = new DataLogger();
     }
 
@@ -55,12 +56,12 @@ public class GameEngine implements EngineSubject {
                 latch = new CountDownLatch(1);
                 try {
                     if (currentState.isTerminal()) {
-                        gameLogger.printSystemText(String.format("Game over: %s wins.", turnToPlay.getName()), observers.get(0));
+                        gameLogger.printSystemText(String.format("Game over: %s wins.", turnToPlay.getName()), controllers.get(0));
                         break;
                     }
 
                     turnToPlay = currentState.getCurrentPlayer();
-                    gameLogger.printSystemText(String.format("Waiting for player %s...\n", turnToPlay.getName()), observers.get(0));
+                    gameLogger.printSystemText(String.format("Waiting for player %s...\n", turnToPlay.getName()), controllers.get(0));
 
                     if (!turnToPlay.isHuman()) {
                         MachinePlayer player = (MachinePlayer) turnToPlay;
@@ -76,8 +77,8 @@ public class GameEngine implements EngineSubject {
                 //gameBoardModel.executeAction(nextMove, turnToPlay.getSelectedStone());
 
                 currentState.updateStateWithAction(turnToPlay.getSelectedStone(), nextMove);
-                gameLogger.printAction(nextMove, observers.get(0));
-                observers.get(0).updateMoveStoneInUI(turnToPlay.getSelectedStone());
+                gameLogger.printAction(nextMove, controllers.get(0));
+                controllers.get(0).updateMoveStoneInUI(turnToPlay.getSelectedStone());
                 turnToPlay.setSelectedStone(null);
                 printBoard();
 
@@ -119,42 +120,65 @@ public class GameEngine implements EngineSubject {
         latch.countDown();
     }
 
-    //remove
-    @Override
-    public void notifyUpdateUI() {
-
-    }
-
+    /**
+     * Getter for the board model
+     *
+     * @return the game board
+     */
     public GameBoardModel getModel() {
         return currentState.getBoard();
     }
 
+    /**
+     * Getter for the current state of the game
+     *
+     * @return the current GameState
+     */
     public GameState getCurrentState() {
         return currentState;
     }
 
+    /**
+     * Getter for player one's stones.
+     *
+     * @return the list for player one's stones on the board
+     */
     public List<Stone> getPlayerOneStones() {
         return currentState.getBoard().getPlayerOneStones();
     }
 
+    /**
+     * Getter for player two's stones.
+     *
+     * @return the list for player two's stones on the board
+     */
     public List<Stone> getPlayerTwoStones() {
         return currentState.getBoard().getPlayerTwoStones();
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
-    public void addObserver(Observer o) {
-        observers.add(o);
-        currentState.getBoard().addObserver(o);
-        playerTwo.addObserver(o);
+    public void addController(Controller c) {
+        controllers.add(c);
+        currentState.getBoard().addController(c);
+        playerTwo.addController(c);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public void removeController(Controller c) {
+        controllers.remove(c);
+    }
+
+    /**
+     * Prints a text representation of the board. Used for debugging only.
+     */
     private void printBoard() {
         GameBoardModel board = currentState.getBoard();
         board.printBoard();
-    }
-
-    @Override
-    public void removeObserver(Observer o) {
-        observers.remove(o);
     }
 }

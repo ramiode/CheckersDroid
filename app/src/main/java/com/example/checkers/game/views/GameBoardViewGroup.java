@@ -15,6 +15,12 @@ import java.util.List;
  * @author Ramiar Odendaal
  */
 public class GameBoardViewGroup extends ViewGroup {
+
+    /**
+     * Initializes this custom ViewGroup based on the given context.
+     *
+     * @param context the current context of the application
+     */
     public GameBoardViewGroup(Context context) {
         super(context);
     }
@@ -23,8 +29,9 @@ public class GameBoardViewGroup extends ViewGroup {
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         layoutChildren();
     }
+
     @Override
-    public boolean shouldDelayChildPressedState(){
+    public boolean shouldDelayChildPressedState() {
         return false;
     }
 
@@ -42,10 +49,11 @@ public class GameBoardViewGroup extends ViewGroup {
 
     /**
      * Instantiates the game tiles which constitute the board. Assigns a listener to each tile.
+     *
      * @param listener a listener provided by GameActivity to manage player interaction
      */
-    public void initializeBoard(OnClickListener listener){
-        for(int i = 0; i < AppConstants.NO_TILES; i++){
+    public void initializeBoard(OnClickListener listener) {
+        for (int i = 0; i < AppConstants.NO_TILES; i++) {
             TileView tile = new TileView(this.getContext(), i);
             addView(tile);
             tile.setId(i);
@@ -55,11 +63,12 @@ public class GameBoardViewGroup extends ViewGroup {
 
     /**
      * Instantiates a StoneView for each stone in the provided list
+     *
      * @param stones the list of stones a certain player has
-     * @param color the color of the player's stones
+     * @param color  the color of the player's stones
      */
-    public void initializeStones(final List<Stone> stones, int color){
-        for(Stone stone : stones){
+    public void initializeStones(final List<Stone> stones, int color) {
+        for (Stone stone : stones) {
             StoneView stoneView = new StoneView(this.getContext(), color, stone.getPosition());
             stoneView.setId(stone.getId());
             addView(stoneView);
@@ -68,62 +77,62 @@ public class GameBoardViewGroup extends ViewGroup {
 
     /**
      * Finds the StoneView through its unique identifier.
+     *
      * @param id the unique identifier for the stone
      * @return the StoneView instance
      */
-    public StoneView findStoneById(int id){
+    public StoneView findStoneById(int id) {
         return findViewById(id);
     }
 
     /**
      * Positions all children in this ViewGroup.
      */
-    private void layoutChildren(){
+    private void layoutChildren() {
         final int noChildren = getChildCount();
         final int width = getWidth() / 8;
-        for(int i = 0; i < noChildren; i++){
+        for (int i = 0; i < noChildren; i++) {
             ComponentView child = (ComponentView) getChildAt(i);
-            if(child.getVisibility() != GONE){
+            if (child.getVisibility() != GONE) {
                 int pos = child.getPosition();
                 int xPos = AppConstants.ROW[pos];
                 int yPos = AppConstants.COL[pos];
-                child.layout(yPos * width, xPos*width, yPos * width + width, xPos * width + width);
+                child.layout(yPos * width, xPos * width, yPos * width + width, xPos * width + width);
             }
         }
     }
+
     /**
      * Method called when a player has clicked on a tile in the game board.
      * Toggles the selected boolean for the tile and prompts a redraw.
      * A selected tile has a different color.
+     *
      * @param tile the TileView that was clicked
      */
-    public void highlightTile(TileView tile, boolean toggle){
+    public void highlightTile(TileView tile, boolean toggle) {
         tile.setSelected(toggle);
         tile.invalidate();
     }
 
-    public void markJumpableTile(int position, boolean toggle){
+    /**
+     * Marks the tile at the given position as jumpable in the UI.
+     *
+     * @param position the position of the tile
+     */
+    public void markJumpableTile(int position) {
         TileView tile = findViewById(position);
-        tile.setJumpable(true);
+        tile.setJumpable();
         tile.invalidate();
     }
 
-    public void resetSelection(){
-        for(int i = 0; i < AppConstants.NO_TILES; i++){
+    /**
+     * Resets all view selection from the tiles on the board.
+     */
+    public void resetSelection() {
+        for (int i = 0; i < AppConstants.NO_TILES; i++) {
             TileView tile = findViewById(i);
             tile.reset();
             tile.invalidate();
-        }
-    }
-
-    public void updateUI(){
-        requestLayout();
-        final int noChildren = getChildCount();
-        for(int i = 0; i < noChildren; i++){
-            ComponentView child = (ComponentView) getChildAt(i);
-            if(child.getVisibility() != GONE){
-
-            }
         }
     }
 }

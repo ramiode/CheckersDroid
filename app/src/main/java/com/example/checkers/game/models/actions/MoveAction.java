@@ -16,17 +16,22 @@ public class MoveAction extends Action {
     /**
      * Instantiates a MoveAction with origin and target positions.
      *
-     * @param from the starting position
-     * @param to the target position
+     * @param from   the starting position
+     * @param to     the target position
      * @param player the acting player
-     * @param stone the selected stone
+     * @param stone  the selected stone
      */
-    public MoveAction(int from, int to, Player player, Stone stone){
-       super(player, stone);
-       this.from = from;
-       this.to = to;
+    public MoveAction(int from, int to, Player player, Stone stone) {
+        super(player, stone);
+        this.from = from;
+        this.to = to;
     }
 
+    /**
+     * Generates a message describing this MoveAction
+     *
+     * @return a string describing this move
+     */
     @Override
     public String getActionMessage() {
         return String.format("moves from position %s to %s.\n", AppConstants.TILE_NAMES[from], AppConstants.TILE_NAMES[to]);

@@ -8,6 +8,7 @@ import android.graphics.Color;
  * @author Ramiar Odendaal
  */
 public final class AppConstants {
+    //TODO: Consider placing some of these constants in the relevant classes instead
     private AppConstants() {
         throw new IllegalStateException("Utility class");
     }
@@ -30,8 +31,6 @@ public final class AppConstants {
 
     public final static int RED_STONE = Color.RED;
     public final static int WHITE_STONE = Color.WHITE;
-    public final static int KING_COLOR = Color.BLUE;
-
     public final static String PLAYER_WHITE = "WHITE";
     public final static String PLAYER_RED = "RED";
 
