@@ -1,4 +1,4 @@
-package com.example.checkers;
+package com.example.checkers.mvcinterfaces;
 
 /**
  * An extension of subject for use in concrete Agents.

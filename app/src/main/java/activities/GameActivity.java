@@ -2,8 +2,6 @@ package activities;
 
 import static android.view.View.GONE;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -13,20 +11,22 @@ import android.widget.FrameLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-import com.example.checkers.Controller;
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.example.checkers.R;
+import com.example.checkers.game.RuleEnforcer;
 import com.example.checkers.game.models.GameEngine;
 import com.example.checkers.game.models.actions.Action;
 import com.example.checkers.game.models.actions.JumpAction;
-import com.example.checkers.game.models.players.HumanPlayer;
 import com.example.checkers.game.models.actions.MoveAction;
+import com.example.checkers.game.models.pieces.Stone;
+import com.example.checkers.game.models.players.HumanPlayer;
 import com.example.checkers.game.models.players.MachinePlayer;
 import com.example.checkers.game.models.players.Player;
-import com.example.checkers.game.RuleEnforcer;
-import com.example.checkers.game.models.pieces.Stone;
 import com.example.checkers.game.views.GameBoardViewGroup;
 import com.example.checkers.game.views.StoneView;
 import com.example.checkers.game.views.TileView;
+import com.example.checkers.mvcinterfaces.Controller;
 import com.example.checkers.utils.AppConstants;
 
 import java.util.List;

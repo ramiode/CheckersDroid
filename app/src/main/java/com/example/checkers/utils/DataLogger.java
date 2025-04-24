@@ -2,8 +2,8 @@ package com.example.checkers.utils;
 
 import android.graphics.Color;
 
-import com.example.checkers.Controller;
 import com.example.checkers.game.models.actions.Action;
+import com.example.checkers.mvcinterfaces.Controller;
 
 /**
  * Logs the game results and notifies the controller to update the UI.

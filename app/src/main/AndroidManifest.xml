@@ -13,6 +13,9 @@
         android:theme="@style/Theme.Checkers"
         tools:targetApi="31">
         <activity
+            android:name="activities.ReportActivity"
+            android:exported="false" />
+        <activity
             android:name="activities.SettingsActivity"
             android:exported="false" />
         <activity

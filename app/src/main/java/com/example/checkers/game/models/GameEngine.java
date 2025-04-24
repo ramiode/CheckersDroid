@@ -1,13 +1,13 @@
 package com.example.checkers.game.models;
 
-import com.example.checkers.Subject;
 import com.example.checkers.game.GameState;
 import com.example.checkers.game.models.actions.Action;
 import com.example.checkers.game.models.pieces.Stone;
 import com.example.checkers.game.models.players.HumanPlayer;
 import com.example.checkers.game.models.players.MachinePlayer;
-import com.example.checkers.Controller;
 import com.example.checkers.game.models.players.Player;
+import com.example.checkers.mvcinterfaces.Controller;
+import com.example.checkers.mvcinterfaces.Subject;
 import com.example.checkers.utils.DataLogger;
 
 import java.util.LinkedList;

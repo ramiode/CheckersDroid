@@ -1,9 +1,9 @@
 package com.example.checkers.game.models.players;
 
-import com.example.checkers.AgentSubject;
-import com.example.checkers.Controller;
 import com.example.checkers.game.models.actions.Action;
 import com.example.checkers.game.models.pieces.Stone;
+import com.example.checkers.mvcinterfaces.AgentSubject;
+import com.example.checkers.mvcinterfaces.Controller;
 import com.example.checkers.utils.AppConstants;
 
 import java.util.LinkedList;

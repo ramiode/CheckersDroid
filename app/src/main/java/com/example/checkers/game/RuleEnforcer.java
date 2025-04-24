@@ -1,7 +1,7 @@
 package com.example.checkers.game;
 
-import com.example.checkers.game.models.actions.Action;
 import com.example.checkers.game.models.GameBoardModel;
+import com.example.checkers.game.models.actions.Action;
 import com.example.checkers.game.models.actions.JumpAction;
 import com.example.checkers.game.models.actions.MoveAction;
 import com.example.checkers.utils.AppConstants;

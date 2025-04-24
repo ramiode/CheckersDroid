@@ -1,4 +1,4 @@
-package com.example.checkers;
+package com.example.checkers.mvcinterfaces;
 
 import com.example.checkers.game.models.pieces.Stone;
 

@@ -1,11 +1,11 @@
 package com.example.checkers.game.models;
 
-import com.example.checkers.Controller;
-import com.example.checkers.Subject;
 import com.example.checkers.game.models.actions.Action;
+import com.example.checkers.game.models.actions.JumpAction;
 import com.example.checkers.game.models.actions.MoveAction;
 import com.example.checkers.game.models.pieces.Stone;
-import com.example.checkers.game.models.actions.JumpAction;
+import com.example.checkers.mvcinterfaces.Controller;
+import com.example.checkers.mvcinterfaces.Subject;
 import com.example.checkers.utils.AppConstants;
 
 import java.util.ArrayList;

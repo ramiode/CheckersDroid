@@ -1,7 +1,7 @@
 package com.example.checkers.game.models.actions;
 
-import com.example.checkers.game.models.players.Player;
 import com.example.checkers.game.models.pieces.Stone;
+import com.example.checkers.game.models.players.Player;
 
 /**
  * Abstract class representing a generic action.

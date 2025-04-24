@@ -1,9 +1,5 @@
 package com.example.checkers.game.models.players;
 
-import com.example.checkers.game.GameState;
-import com.example.checkers.game.models.actions.Action;
-import com.example.checkers.game.models.actions.MoveAction;
-
 /**
  * A concrete implementation of player representing a human player that interacts with the UI directly.
  *
