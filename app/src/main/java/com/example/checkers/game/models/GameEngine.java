@@ -76,10 +76,10 @@ public class GameEngine implements Subject {
 
                 //gameBoardModel.executeAction(nextMove, turnToPlay.getSelectedStone());
 
-                currentState.updateStateWithAction(turnToPlay.getSelectedStone(), nextMove);
+                currentState.updateStateWithAction(nextMove);
                 gameLogger.printAction(nextMove, controllers.get(0));
-                controllers.get(0).updateMoveStoneInUI(turnToPlay.getSelectedStone());
-                turnToPlay.setSelectedStone(null);
+                //controllers.get(0).updateMoveStoneInUI(turnToPlay.getSelectedStone());
+                //turnToPlay.setSelectedStone(null);
                 printBoard();
 
                 try {

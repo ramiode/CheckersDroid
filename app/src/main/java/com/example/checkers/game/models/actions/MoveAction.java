@@ -12,6 +12,7 @@ import com.example.checkers.utils.AppConstants;
 public class MoveAction extends Action {
     public final int from;
     public final int to;
+    private final boolean isKingingMove;
 
     /**
      * Instantiates a MoveAction with origin and target positions.
@@ -25,6 +26,9 @@ public class MoveAction extends Action {
         super(player, stone);
         this.from = from;
         this.to = to;
+        int[] opponentRow = player.getColor().equals(AppConstants.PLAYER_RED) ? AppConstants.WHITE_ROW : AppConstants.RED_ROW;
+        boolean movingToOpponentRow = to >= opponentRow[0] && to <= opponentRow[1];
+        this.isKingingMove = stone.getKingStatus() ? false : movingToOpponentRow;
     }
 
     /**
@@ -35,5 +39,9 @@ public class MoveAction extends Action {
     @Override
     public String getActionMessage() {
         return String.format("moves from position %s to %s.\n", AppConstants.TILE_NAMES[from], AppConstants.TILE_NAMES[to]);
+    }
+
+    public boolean isKingingMove(){
+        return isKingingMove;
     }
 }

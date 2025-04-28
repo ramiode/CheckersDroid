@@ -74,7 +74,7 @@ public class GameState implements Cloneable {
      * @param stones the list of the current player's stones
      * @return a list of all possible move actions
      */
-    private List<MoveAction> generateMoveActions(List<Stone> stones) {
+    public List<MoveAction> generateMoveActions(List<Stone> stones) {
         LinkedList<MoveAction> possibleMoves = new LinkedList<>();
 
         for (Stone stone : stones) {
@@ -205,12 +205,13 @@ public class GameState implements Cloneable {
     /**
      * Given an action and a stone, updates this state with that action by performing the move on the board. Switches the current player after the action is executed.
      *
-     * @param stone  the selected stone
      * @param action the selected action
+     * @return the updated state
      */
-    public void updateStateWithAction(Stone stone, Action action) {
-        board.executeAction(action, stone);
+    public GameState updateStateWithAction(Action action) {
+        board.executeAction(action);
         switchPlayer();
+        return this;
     }
 
     /**
@@ -238,6 +239,17 @@ public class GameState implements Cloneable {
         }
     }
 
+    public String getPlayerOneName(){
+        return playerOne.getName();
+    }
+
+    public Player getWinner(){
+        return currentPlayer.getName().equals(playerOne.getName()) ? playerTwo : playerOne;
+    }
+
+    public boolean isDraw(){
+        return false;
+    }
     @Override
     public GameState clone() {
         try {

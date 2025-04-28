@@ -57,4 +57,5 @@ public abstract class Action {
      * @return a string representing the action
      */
     public abstract String getActionMessage();
+
 }

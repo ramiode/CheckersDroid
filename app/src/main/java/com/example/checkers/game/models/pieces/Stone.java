@@ -67,6 +67,10 @@ public class Stone implements Cloneable {
         return player;
     }
 
+    public void undoKing(){
+        isKing = false;
+    }
+
     /**
      * Upgrades this stone to be a King. Kings can move backwards as well as forwards.
      */
@@ -100,6 +104,7 @@ public class Stone implements Cloneable {
     public Stone clone() {
         try {
             Stone clonedStone = (Stone) super.clone();
+            clonedStone.directions = this.directions.clone();
             return clonedStone;
         } catch (CloneNotSupportedException e) {
             throw new AssertionError();
