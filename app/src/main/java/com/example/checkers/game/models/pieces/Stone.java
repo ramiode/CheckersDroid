@@ -67,6 +67,9 @@ public class Stone implements Cloneable {
         return player;
     }
 
+    /**
+     * Reverts king status, used for undoing moves.
+     */
     public void undoKing(){
         isKing = false;
     }

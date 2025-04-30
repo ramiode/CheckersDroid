@@ -126,6 +126,11 @@ public class GameState implements Cloneable {
         return possibleMoves;
     }
 
+    /**
+     * Getter for the state's current player.
+     *
+     * @return the current player
+     */
     public Player getCurrentPlayer() {
         return currentPlayer;
     }
@@ -215,6 +220,16 @@ public class GameState implements Cloneable {
     }
 
     /**
+     * Undos an action. Can be used for any action, but reserved for actions that have been done previously.
+     *
+     * @param action the action to be reversed
+     */
+    public void updateStateWithUndoAction(Action action){
+        board.undoAction(action);
+        switchPlayer();
+    }
+
+    /**
      * Switches the current player.
      */
     private void switchPlayer() {
@@ -239,10 +254,20 @@ public class GameState implements Cloneable {
         }
     }
 
+    /**
+     * Get the name of this state's player one.
+     *
+     * @return the name of player one
+     */
     public String getPlayerOneName(){
         return playerOne.getName();
     }
 
+    /**
+     * Returns the winner of this game if a terminal state has been reached.
+     *
+     * @return the player who has won the game
+     */
     public Player getWinner(){
         return currentPlayer.getName().equals(playerOne.getName()) ? playerTwo : playerOne;
     }

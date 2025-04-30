@@ -82,9 +82,10 @@ public class GameActivity extends AppCompatActivity implements Controller {
         logText.setText("");
         //Model components
         Player playerOne = new HumanPlayer(true, "One");
+        //Player playerOne = new MachinePlayer(true, "One", true);
         Player playerTwo = new MachinePlayer(false, "Two", true);
         playerTwo.addController(this);
-        //playerOne.addObserver(this);
+        //playerOne.addController(this);
 
         engine = new GameEngine(playerOne, playerTwo);
         engine.addController(this);
@@ -173,7 +174,6 @@ public class GameActivity extends AppCompatActivity implements Controller {
      * @return a JumpAction matching the user's selected action
      */
     private JumpAction createJumpAction(Stone stone, List<JumpAction> jumps, int position) {
-        //TODO: Check what happens when multiple jumps are available
         return jumps.stream()
                 .filter(jump -> jump.getPositions().get(jump.getPositions().size() - 1) == position && jump.getStone().getId() == stone.getId())
                 .findFirst()
@@ -193,6 +193,11 @@ public class GameActivity extends AppCompatActivity implements Controller {
      */
     @Override
     public void updateRemoveStoneFromUI(Stone stone) {
+        try {
+            Thread.sleep(250);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         runOnUiThread(() -> {
             StoneView stoneView = gameBoardViewGroup.findStoneById(stone.getId());
             stoneView.postDelayed(() -> {
@@ -207,6 +212,11 @@ public class GameActivity extends AppCompatActivity implements Controller {
      */
     @Override
     public void updateMoveStoneInUI(Stone stone) {
+        try {
+            Thread.sleep(250);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         runOnUiThread(() -> {
             StoneView s = gameBoardViewGroup.findStoneById(stone.getId());
             if (stone.getKingStatus()) {

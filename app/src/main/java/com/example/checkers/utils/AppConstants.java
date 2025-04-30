@@ -68,6 +68,7 @@ public final class AppConstants {
             0, 1, 2, 3, 4, 5, 6, 7,
             0, 1, 2, 3, 4, 5, 6, 7,
             0, 1, 2, 3, 4, 5, 6, 7};
+
     public static final String[] BOARD_COLOR = {
             "WHITE", "BLACK", "WHITE", "BLACK", "WHITE", "BLACK", "WHITE", "BLACK",
             "BLACK", "WHITE", "BLACK", "WHITE", "BLACK", "WHITE", "BLACK", "WHITE",

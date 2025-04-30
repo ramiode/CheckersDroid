@@ -80,10 +80,10 @@ public class GameEngine implements Subject {
                 gameLogger.printAction(nextMove, controllers.get(0));
                 //controllers.get(0).updateMoveStoneInUI(turnToPlay.getSelectedStone());
                 //turnToPlay.setSelectedStone(null);
-                printBoard();
+                //printBoard();
 
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(500);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

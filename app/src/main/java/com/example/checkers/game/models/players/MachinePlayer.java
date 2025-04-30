@@ -27,7 +27,7 @@ public class MachinePlayer extends Player {
      */
     public MachinePlayer(boolean isRed, String name, boolean isMinimax) {
         super(isRed, name);
-        aiModel = isMinimax ? new MinimaxAgent(name) : new MCTSAgent(name);
+        aiModel = isMinimax ? new MinimaxAgent(name, 2000) : new MCTSAgent(name, 1000);
     }
 
     /**
@@ -36,18 +36,6 @@ public class MachinePlayer extends Player {
      * @param state the current state of the game
      */
     public void generateAction(GameState state) {
-        /*
-        Random r = new Random();
-        List<Action> actions = state.generateLegalActions();
-        int random = Math.abs(r.nextInt() % actions.size());
-        Action action = actions.get(random);
-        //Action action = aiModel.getNextMove();
-        setSelectedStone(action.getStone());
-        setNextMove(action);
-        notifyMoveMade();
-
-         */
-
         Action action = aiModel.getNextMove(state);
         setSelectedStone(action.getStone());
         setNextMove(action);

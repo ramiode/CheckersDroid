@@ -9,8 +9,8 @@ import com.example.checkers.game.models.actions.Action;
  * @author Ramiar Odendaal
  */
 public class MCTSAgent extends Agent{
-    public MCTSAgent(String name) {
-        super(name);
+    public MCTSAgent(String name, int timeSlice) {
+        super(name, timeSlice);
     }
 
     /**

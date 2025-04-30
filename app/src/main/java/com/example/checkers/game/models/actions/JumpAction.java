@@ -94,6 +94,10 @@ public class JumpAction extends Action implements Cloneable {
         return path;
     }
 
+    public int getStartingPos(){
+        return startingPos;
+    }
+
     /**
      * Returns the list of captured stones
      *

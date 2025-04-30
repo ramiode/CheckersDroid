@@ -122,9 +122,7 @@ public class GameBoardModel implements Cloneable, Subject {
      * Moves an existing stone from one position to a new one.
      * Checks if the stone can be upgraded to a king after moving.
      *
-     * @param stone       the stone to be moved
-     * @param oldPosition the previous position of the stone on the board
-     * @param newPosition the new position of the stone on the board
+     * @param move the MoveAction to be executed
      */
     private void executeMove(MoveAction move) {
         int newPosition = move.to;
@@ -197,15 +195,24 @@ public class GameBoardModel implements Cloneable, Subject {
         }
     }
 
+    /**
+     * Reverses a previous action to undo changes to the board.
+     *
+     * @param action the action to be reversed
+     */
     public void undoAction(Action action){
         if (action instanceof MoveAction) {
             MoveAction move = (MoveAction) action;
-            executeMove(move);
+            undoMove(move);
         } else if (action instanceof JumpAction) {
-            executeJump((JumpAction) action);
+            undoJump((JumpAction) action);
         }
     }
 
+    /**
+     * Helper method that handles undoing of MoveActions.
+     * @param move the move action to be reversed
+     */
     private void undoMove(MoveAction move){
         if(move.isKingingMove()){
             move.getStone().undoKing();
@@ -214,14 +221,20 @@ public class GameBoardModel implements Cloneable, Subject {
         executeMove(undoMove);
     }
 
+    /**
+     * Helper method that undoes JumpActions
+     * @param jump the JumpAction to be reversed
+     */
     private void undoJump(JumpAction jump){
-        jump.getCapturedStones().forEach(stone -> placeStone(stone, stone.getPosition()));
-        List<Integer> path = jump.getPositions();
+        boolean isRed = jump.getStone().getPlayerColor().equals(AppConstants.PLAYER_RED);
+        jump.getCapturedStones().forEach(stone -> {
+            placeStone(stone, stone.getPosition());
+            boolean b = isRed ? playerTwoStones.add(stone) : playerOneStones.add(stone);
+        });
+        int originPos = jump.getStartingPos();
         Stone playerStone = getStoneByPosition(jump.getStone().getPosition());
-        for(int i = path.size()-1; i >= 0; i--){
-            MoveAction move = new MoveAction(playerStone.getPosition(), path.get(i), jump.getActingPlayer(), playerStone);
-            executeMove(playerStone, move.from, move.to);
-        }
+        MoveAction move = new MoveAction(playerStone.getPosition(), originPos, jump.getActingPlayer(), playerStone);
+        executeMove(move);
     }
 
     /**
@@ -237,23 +250,13 @@ public class GameBoardModel implements Cloneable, Subject {
 
         for (int x : path) {
             MoveAction move = new MoveAction(playerStone.getPosition(), x, jump.getActingPlayer(), playerStone);
-            executeMove(playerStone, move.from, move.to);
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+            executeMove(move);
         }
 
         for (Stone stone : capturedStones) {
             removeStone(stone);
             if (controllers.size() != 0) {
                 controllers.forEach(e -> e.updateRemoveStoneFromUI(stone));
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
             }
         }
     }
