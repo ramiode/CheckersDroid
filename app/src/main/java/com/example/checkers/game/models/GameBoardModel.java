@@ -246,7 +246,7 @@ public class GameBoardModel implements Cloneable, Subject {
         List<Stone> capturedStones = jump.getCapturedStones();
         List<Integer> path = jump.getPositions();
 
-        Stone playerStone = getStoneByPosition(jump.getStone().getPosition());
+        Stone playerStone = jump.getStone();
 
         for (int x : path) {
             MoveAction move = new MoveAction(playerStone.getPosition(), x, jump.getActingPlayer(), playerStone);
@@ -317,13 +317,15 @@ public class GameBoardModel implements Cloneable, Subject {
     /**
      * Prints a text representation of the board. Used for debugging only.
      */
-    public void printBoard() {
-        System.out.println("+++++++++++++++++++");
-        System.out.println("  1 2 3 4 5 6 7 8");
+    public String printBoard() {
+        //System.out.println("+++++++++++++++++++");
+        //System.out.println("  1 2 3 4 5 6 7 8");
         AtomicInteger i = new AtomicInteger();
-        Arrays.stream(board).map(stoneRow -> Arrays.stream(stoneRow).map(stone -> stone == null ? "-" : stone.getPlayerColor().substring(0, 1)).collect(Collectors.joining("|")))
-                .map(string -> String.format("%c|%s", 'A' + (i.getAndIncrement()), string))
-                .forEach(System.out::println);
-        System.out.println("+++++++++++++++++++");
+        String textBoard = Arrays.stream(board).map(stoneRow -> Arrays.stream(stoneRow).map(stone -> stone == null ? "-" : stone.getPlayerColor().substring(0, 1)).collect(Collectors.joining("|")))
+                .map(string -> String.format("%c|%s\n", 'A' + (i.getAndIncrement()), string))
+                .collect(Collectors.joining("\n"));
+        //System.out.print(textBoard);
+        //System.out.println("+++++++++++++++++++");
+        return textBoard;
     }
 }

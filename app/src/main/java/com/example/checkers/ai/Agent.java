@@ -27,10 +27,10 @@ public abstract class Agent {
             1, 0, 1, 0, 1, 0, 1, 0,
             2, 0, 2, 0, 2, 0, 2, 0,
             3, 0, 3, 0, 3, 0, 3, 0,
-            0, 0, 0, 0, 0, 0, 0, 0
+            4, 0, 4, 0, 4, 0, 4, 0
     };
     private final int[] WHITE_POSITIONAL_SCORES = new int[] {
-            0, 0, 0, 0, 0, 0, 0, 0,
+            4, 0, 4, 0, 4, 0, 4, 0,
             3, 0, 3, 0, 3, 0, 3, 0,
             2, 0, 2, 0, 2, 0, 2, 0,
             1, 0, 1, 0, 1, 0, 1, 0,
@@ -43,12 +43,14 @@ public abstract class Agent {
     protected String name;
     protected int timeSlice;
     protected ExecutorService executor;
-    private final int stoneWeight = 50, kingWeight = 250, movementWeight = 5;
+    protected final boolean isAgentPlayerOne;
+    private int stoneWeight = 25, kingWeight = 75, movementWeight = 1;
 
-    public Agent(String name, int timeSlice){
+    public Agent(String name, int timeSlice, boolean isAgentPlayerOne){
         this.name = name;
         this.timeSlice = timeSlice;
         executor = Executors.newSingleThreadExecutor();
+        this.isAgentPlayerOne = isAgentPlayerOne;
     }
     /**
      * Generates a move based on the current state of the game.
@@ -64,81 +66,42 @@ public abstract class Agent {
      * @return An integer representing the estimated utility of the state.
      */
     protected int evaluate(GameState state, int depth){
+        //encourage triangle formation
+        //encourage kings
         Random r = new Random();
-        int random = r.nextInt(3);
+        int random = r.nextInt(2);
         int estimatedUtility = 0;
 
-        boolean isPlayerOne = state.getPlayerOneName().equals(this.name);
-        boolean isMyTurn = state.getCurrentPlayer().getName().equals(this.name);
+        List<Stone> myStones = isAgentPlayerOne ? state.getBoard().getPlayerOneStones() : state.getBoard().getPlayerTwoStones();
+        List<Stone> enemyStones = isAgentPlayerOne ? state.getBoard().getPlayerTwoStones() : state.getBoard().getPlayerOneStones();
 
-        List<Stone> myStones = isPlayerOne ? state.getBoard().getPlayerOneStones() : state.getBoard().getPlayerTwoStones();
-        List<Stone> enemyStones = isPlayerOne ? state.getBoard().getPlayerTwoStones() : state.getBoard().getPlayerOneStones();
-
-        int noMyStones = (int) myStones.stream().filter(stone -> stone.getKingStatus() == false).count();
-        int noEnemyStones = (int) enemyStones.stream().filter(stone -> stone.getKingStatus() == false).count();
+        int noMyStones = myStones.size();
+        int noEnemyStones = enemyStones.size();
 
         int myMovementEvaluation = myStones.stream()
                 .map(Stone::getPosition)
-                .map(pos -> evaluatePosition(pos, isPlayerOne))
+                .map(pos -> evaluatePosition(pos, isAgentPlayerOne))
                 .reduce(Integer::sum)
                 .orElse(0);
-
-        int enemyMovementEvaluation = enemyStones.stream()
-                .map(Stone::getPosition)
-                .map(pos -> evaluatePosition(pos, !isPlayerOne))
-                .reduce(Integer::sum)
-                .orElse(0);
-
-        int noJumps = state.getJumpActions().size();
 
         if(state.isTerminal()){
             if(state.isDraw()){
                 estimatedUtility += 5000/depth;
             }
-            else if(state.getWinner().getName().equals(this.name)){
+            else if(state.getWinner().getName().equals(isAgentPlayerOne ? state.getPlayerOneName() : state.getPlayerTwoName())){
                 estimatedUtility += 10000/depth;
             }
             else{
                 estimatedUtility -= 10000/depth;
             }
         }
-        estimatedUtility += stoneWeight * (noMyStones - noEnemyStones); //10, 20, 30, 40...
-        estimatedUtility += kingWeight * (countKings(myStones) - countKings(enemyStones)); //50, 100, 150...
-        estimatedUtility += (noMyStones + countKings(myStones) * 25); //<20
+        //TODO: add jump opportunities for MAX in leaf node to evaluation function
+        estimatedUtility += stoneWeight / state.gameStage * (noMyStones - noEnemyStones); //10, 20, 30, 40...
+        estimatedUtility += kingWeight / state.gameStage * (countKings(myStones) - countKings(enemyStones)); //50, 100, 150...
+        estimatedUtility += (noMyStones + countKings(myStones) * 50); //<20
         estimatedUtility += movementWeight * (myMovementEvaluation); //-10 to 10
-        //estimatedUtility += jumpWeight * (isMyTurn ? noJumps : -noJumps); // 10, 20, 30, -10, -20, -30
 
-        return estimatedUtility + (isPlayerOne ? random : -random);
-    }
-    private int maxEvaluate(GameState state, int depth){
-        int estimatedUtility = 0;
-        boolean isPlayerOne = state.getPlayerOneName().equals(this.name);
-        List<Stone> myStones = isPlayerOne ? state.getBoard().getPlayerOneStones() : state.getBoard().getPlayerTwoStones();
-        int noMyStones = (int) myStones.stream().filter(stone -> stone.getKingStatus() == false).count();
-        int noKings = countKings(myStones);
-
-        int myMovementEvaluation = myStones.stream()
-                .map(Stone::getPosition)
-                .map(pos -> evaluatePosition(pos, isPlayerOne))
-                .reduce(Integer::sum)
-                .orElse(0);
-
-        estimatedUtility = stoneWeight * noMyStones + kingWeight * noKings + movementWeight * myMovementEvaluation;
-
-        if(state.isTerminal()){
-            if(state.isDraw()){
-                estimatedUtility += 5000/depth;
-            }
-            else if(state.getWinner().getName().equals(this.name)){
-                estimatedUtility += 10000/depth;
-            }
-            else{
-                estimatedUtility -= 10000/depth;
-            }
-        }
-
-        return estimatedUtility;
-
+        return estimatedUtility + (estimatedUtility % 2 == 0 ? random : -random);
     }
     private int evaluatePosition(int position, boolean isPlayerOne){
         return isPlayerOne ? RED_POSITIONAL_SCORES[position] : WHITE_POSITIONAL_SCORES[position];

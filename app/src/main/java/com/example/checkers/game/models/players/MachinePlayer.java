@@ -5,6 +5,7 @@ import com.example.checkers.ai.MCTSAgent;
 import com.example.checkers.ai.MinimaxAgent;
 import com.example.checkers.game.GameState;
 import com.example.checkers.game.models.actions.Action;
+import com.example.checkers.utils.AppConfig;
 
 import java.util.List;
 import java.util.Random;
@@ -27,7 +28,7 @@ public class MachinePlayer extends Player {
      */
     public MachinePlayer(boolean isRed, String name, boolean isMinimax) {
         super(isRed, name);
-        aiModel = isMinimax ? new MinimaxAgent(name, 2000) : new MCTSAgent(name, 1000);
+        aiModel = isMinimax ? new MinimaxAgent(name, AppConfig.timeSlice, isRed) : new MCTSAgent(name, AppConfig.timeSlice, isRed);
     }
 
     /**

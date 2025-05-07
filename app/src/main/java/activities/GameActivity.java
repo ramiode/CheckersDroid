@@ -27,6 +27,7 @@ import com.example.checkers.game.views.GameBoardViewGroup;
 import com.example.checkers.game.views.StoneView;
 import com.example.checkers.game.views.TileView;
 import com.example.checkers.mvcinterfaces.Controller;
+import com.example.checkers.utils.AppConfig;
 import com.example.checkers.utils.AppConstants;
 
 import java.util.List;
@@ -43,7 +44,6 @@ public class GameActivity extends AppCompatActivity implements Controller {
     private TileView previousTile;
     private TextView logText;
 
-    //TODO: Start on the AI models and logging data
     //TODO: Add quitting game thread and disposing of waste when going in and out of GameActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,7 +56,13 @@ public class GameActivity extends AppCompatActivity implements Controller {
             startActivity(intent);
         });
 
+
         initializeComponents();
+
+        Button resetButton = findViewById(R.id.resetButton);
+        resetButton.setOnClickListener(e -> {
+            recreate();
+        });
 
         engine.startGame();
     }
@@ -81,13 +87,14 @@ public class GameActivity extends AppCompatActivity implements Controller {
         logText = findViewById(R.id.textView2);
         logText.setText("");
         //Model components
-        Player playerOne = new HumanPlayer(true, "One");
+        //Player playerOne = AppConfig.isPlayerOneHuman ? new HumanPlayer(true, "One") : new MachinePlayer(true, "One", AppConfig.playerOneModel.equals(AppConfig.MINIMAX));
         //Player playerOne = new MachinePlayer(true, "One", true);
-        Player playerTwo = new MachinePlayer(false, "Two", true);
-        playerTwo.addController(this);
+        //Player playerTwo = AppConfig.isPlayerTwoHuman ? new HumanPlayer(false, "Two") : new MachinePlayer(false, "Two", AppConfig.playerTwoModel.equals(AppConfig.MINIMAX));
+
+        //playerTwo.addController(this);
         //playerOne.addController(this);
 
-        engine = new GameEngine(playerOne, playerTwo);
+        engine = new GameEngine(this);
         engine.addController(this);
 
         //Add StoneViews to the board

@@ -19,6 +19,8 @@ import java.util.List;
  */
 public class GameState implements Cloneable {
     private GameBoardModel board;
+    public int gameStage = 1;
+    private String currentBoard;
     private final Player playerOne;
     private final Player playerTwo;
     private Player currentPlayer;
@@ -214,8 +216,10 @@ public class GameState implements Cloneable {
      * @return the updated state
      */
     public GameState updateStateWithAction(Action action) {
+        setGameStage();
         board.executeAction(action);
         switchPlayer();
+        currentBoard = board.printBoard();
         return this;
     }
 
@@ -225,8 +229,10 @@ public class GameState implements Cloneable {
      * @param action the action to be reversed
      */
     public void updateStateWithUndoAction(Action action){
+        setGameStage();
         board.undoAction(action);
         switchPlayer();
+        currentBoard = board.printBoard();
     }
 
     /**
@@ -236,6 +242,21 @@ public class GameState implements Cloneable {
         currentPlayer = currentPlayer.equals(playerOne) ? playerTwo : playerOne;
     }
 
+    private void setGameStage(){
+        int playerOneStones = board.getPlayerOneStones().size();
+        int playerTwoStones = board.getPlayerTwoStones().size();
+
+        int sum = playerOneStones + playerTwoStones;
+        if(sum >= 19){
+            gameStage = 1;
+        }
+        else if(sum >= 9){
+            gameStage = 2;
+        }
+        else{
+            gameStage = 3;
+        }
+    }
     /**
      * Checks if this state is terminal, i.e. the game has ended in a win for either player or a draw.
      *
@@ -261,6 +282,15 @@ public class GameState implements Cloneable {
      */
     public String getPlayerOneName(){
         return playerOne.getName();
+    }
+
+    /**
+     * Get the name of this state's player one.
+     *
+     * @return the name of player two
+     */
+    public String getPlayerTwoName(){
+        return playerTwo.getName();
     }
 
     /**

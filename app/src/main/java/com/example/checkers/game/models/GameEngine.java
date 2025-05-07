@@ -8,6 +8,7 @@ import com.example.checkers.game.models.players.MachinePlayer;
 import com.example.checkers.game.models.players.Player;
 import com.example.checkers.mvcinterfaces.Controller;
 import com.example.checkers.mvcinterfaces.Subject;
+import com.example.checkers.utils.AppConfig;
 import com.example.checkers.utils.DataLogger;
 
 import java.util.LinkedList;
@@ -24,18 +25,21 @@ public class GameEngine implements Subject {
     private CountDownLatch latch;
     private volatile boolean isRunning;
     private GameState currentState;
+    private Thread gameThread;
     private final List<Controller> controllers;
 
     /**
      * Constructs the game engine with starting players and an initialized board.
      *
-     * @param playerOne The red player
-     * @param playerTwo The white player
+     * @param controller the controller for this model
      */
-    public GameEngine(Player playerOne, Player playerTwo) {
+    public GameEngine(Controller controller) {
         //TODO: Game engine should define the players
-        this.playerOne = new HumanPlayer(true, "Chad");
-        this.playerTwo = new MachinePlayer(false, "Brad", true);
+        this.playerOne = AppConfig.isPlayerOneHuman ? new HumanPlayer(true, "One") : new MachinePlayer(true, "One", AppConfig.playerOneModel.equals(AppConfig.MINIMAX));
+        this.playerTwo = AppConfig.isPlayerTwoHuman ? new HumanPlayer(false, "Two") : new MachinePlayer(false, "Two", AppConfig.playerTwoModel.equals(AppConfig.MINIMAX));
+        playerOne.addController(controller);
+        playerTwo.addController(controller);
+        //this.playerTwo = new MachinePlayer(false, "Brad", true);
         GameBoardModel model = new GameBoardModel();
         model.initializeStones(true);
         this.currentState = new GameState(model, playerOne, playerTwo, playerOne);
@@ -43,6 +47,13 @@ public class GameEngine implements Subject {
         gameLogger = new DataLogger();
     }
 
+    public void restartGame(){
+        GameBoardModel model = new GameBoardModel();
+        model.initializeStones(true);
+        this.currentState = new GameState(model, playerOne, playerTwo, playerOne);
+        gameThread.interrupt();
+        startGame();
+    }
     /**
      * Starts the game in a separate thread. Waits for the current player to make a move, executes it, notifies the controller, then switches to the other player in a loop.
      */
@@ -67,20 +78,16 @@ public class GameEngine implements Subject {
                         MachinePlayer player = (MachinePlayer) turnToPlay;
                         player.generateAction(currentState);
                     }
-
                     latch.await();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
+                    break;
                 }
-                Action nextMove = turnToPlay.getNextMove();
 
-                //gameBoardModel.executeAction(nextMove, turnToPlay.getSelectedStone());
+                Action nextMove = turnToPlay.getNextMove();
 
                 currentState.updateStateWithAction(nextMove);
                 gameLogger.printAction(nextMove, controllers.get(0));
-                //controllers.get(0).updateMoveStoneInUI(turnToPlay.getSelectedStone());
-                //turnToPlay.setSelectedStone(null);
-                //printBoard();
 
                 try {
                     Thread.sleep(500);
@@ -91,7 +98,7 @@ public class GameEngine implements Subject {
             }
         };
 
-        Thread gameThread = new Thread(gameLoop);
+        gameThread = new Thread(gameLoop);
         gameThread.start();
 
     }
@@ -163,7 +170,7 @@ public class GameEngine implements Subject {
     public void addController(Controller c) {
         controllers.add(c);
         currentState.getBoard().addController(c);
-        playerTwo.addController(c);
+        //playerTwo.addController(c);
     }
 
     /**

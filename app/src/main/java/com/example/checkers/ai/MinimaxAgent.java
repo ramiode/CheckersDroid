@@ -20,8 +20,8 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class MinimaxAgent extends Agent{
     private int counter;
-    public MinimaxAgent(String name, int timeSlice) {
-        super(name, timeSlice);
+    public MinimaxAgent(String name, int timeSlice, boolean isPlayerAgentOne) {
+        super(name, timeSlice, isPlayerAgentOne);
     }
 
     /**
@@ -85,8 +85,6 @@ public class MinimaxAgent extends Agent{
             int random = r.nextInt(actions.size());
             generatedAction = actions.get(random);
         }
-        System.out.println("EVALUATED " + counter + " TIMES");
-        counter = 0;
         return generatedAction;
     }
 
