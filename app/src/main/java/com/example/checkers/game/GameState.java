@@ -21,6 +21,10 @@ public class GameState implements Cloneable {
     private GameBoardModel board;
     public int gameStage = 1;
     private String currentBoard;
+    private boolean isDraw;
+    private int moveCounter = 0;
+    private int redStones = 0;
+    private int whiteStones = 0;
     private final Player playerOne;
     private final Player playerTwo;
     private Player currentPlayer;
@@ -216,6 +220,23 @@ public class GameState implements Cloneable {
      * @return the updated state
      */
     public GameState updateStateWithAction(Action action) {
+        /*
+        Doesnt work
+        if(moveCounter >= 50){
+            if(redStones == board.getPlayerOneStones().size() && whiteStones == board.getPlayerTwoStones().size()){
+                isDraw = true;
+            }
+            else{
+                moveCounter = 0;
+            }
+        }
+        if(moveCounter <= 0){
+            redStones = board.getPlayerOneStones().size();
+            whiteStones = board.getPlayerTwoStones().size();
+        }
+
+         */
+        moveCounter++;
         setGameStage();
         board.executeAction(action);
         switchPlayer();
@@ -229,6 +250,7 @@ public class GameState implements Cloneable {
      * @param action the action to be reversed
      */
     public void updateStateWithUndoAction(Action action){
+        moveCounter--;
         setGameStage();
         board.undoAction(action);
         switchPlayer();
@@ -263,16 +285,16 @@ public class GameState implements Cloneable {
      * @return true if the state is terminal
      */
     public boolean isTerminal() {
-        //TODO: Add draw if no captures have been made in x amount of moves?
         if (board.getPlayerOneStones().size() == 0 || board.getPlayerTwoStones().size() == 0) {
             return true;
         }
         else if (generateLegalActions().size() == 0) {
             return true;
         }
-        else {
-            return false;
+        else if(isDraw){
+            return true;
         }
+        return false;
     }
 
     /**
@@ -299,7 +321,7 @@ public class GameState implements Cloneable {
      * @return the player who has won the game
      */
     public Player getWinner(){
-        return currentPlayer.getName().equals(playerOne.getName()) ? playerTwo : playerOne;
+        return currentPlayer;
     }
 
     public boolean isDraw(){
@@ -315,6 +337,19 @@ public class GameState implements Cloneable {
         catch (CloneNotSupportedException e) {
             throw new AssertionError();
         }
+    }
+
+    public boolean equals(GameState state){
+        if(state.getCurrentPlayer() != this.currentPlayer){
+            return false;
+        }
+        else if(state.gameStage != this.gameStage){
+            return false;
+        }
+        else if(!this.board.equals(state.board)){
+            return false;
+        }
+        return true;
     }
 
 }

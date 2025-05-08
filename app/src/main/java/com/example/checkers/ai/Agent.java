@@ -17,34 +17,35 @@ import java.util.concurrent.Executors;
  * @author Ramiar Odendaal
  */
 public abstract class Agent {
+    //TODO: Tweak weights, optimize late game play
     protected final int DEPTH_LIMIT = 20;
 
     private final int[] RED_POSITIONAL_SCORES = new int[] {
-            4, 0, 4, 0, 4, 0, 4, 0,
+            8, 0, 8, 0, 8, 0, 8, 0,
             3, 0, 3, 0, 3, 0, 3, 0,
             2, 0, 2, 0, 2, 0, 2, 0,
             1, 0, 1, 0, 1, 0, 1, 0,
             1, 0, 1, 0, 1, 0, 1, 0,
             2, 0, 2, 0, 2, 0, 2, 0,
             3, 0, 3, 0, 3, 0, 3, 0,
-            4, 0, 4, 0, 4, 0, 4, 0
+            8, 0, 8, 0, 8, 0, 8, 0
     };
     private final int[] WHITE_POSITIONAL_SCORES = new int[] {
-            4, 0, 4, 0, 4, 0, 4, 0,
+            8, 0, 8, 0, 8, 0, 8, 0,
             3, 0, 3, 0, 3, 0, 3, 0,
             2, 0, 2, 0, 2, 0, 2, 0,
             1, 0, 1, 0, 1, 0, 1, 0,
             1, 0, 1, 0, 1, 0, 1, 0,
             2, 0, 2, 0, 2, 0, 2, 0,
             3, 0, 3, 0, 3, 0, 3, 0,
-            4, 0, 4, 0, 4, 0, 4, 0
+            8, 0, 8, 0, 8, 0, 8, 0
     };
 
     protected String name;
     protected int timeSlice;
     protected ExecutorService executor;
     protected final boolean isAgentPlayerOne;
-    private int stoneWeight = 25, kingWeight = 75, movementWeight = 1;
+    private int stoneWeight = 50, kingWeight = 100, movementWeight = 1, triangleWeight = 1;
 
     public Agent(String name, int timeSlice, boolean isAgentPlayerOne){
         this.name = name;
@@ -66,8 +67,6 @@ public abstract class Agent {
      * @return An integer representing the estimated utility of the state.
      */
     protected int evaluate(GameState state, int depth){
-        //encourage triangle formation
-        //encourage kings
         Random r = new Random();
         int random = r.nextInt(2);
         int estimatedUtility = 0;
@@ -83,23 +82,29 @@ public abstract class Agent {
                 .map(pos -> evaluatePosition(pos, isAgentPlayerOne))
                 .reduce(Integer::sum)
                 .orElse(0);
+        int triangleFormationEvaluation = myStones.stream()
+                .map(stone -> state.getBoard().checkAdjacentFriendlyStones(stone))
+                .reduce(Integer::sum)
+                .orElse(0);
+
+        estimatedUtility += stoneWeight * Math.pow(state.gameStage, 2) * (noMyStones - noEnemyStones); //10, 20, 30, 40...
+        //estimatedUtility += kingWeight / state.gameStage * (countKings(myStones) - countKings(enemyStones)); //50, 100, 150...
+        estimatedUtility += triangleWeight * triangleFormationEvaluation; //30
+        estimatedUtility += movementWeight * (myMovementEvaluation); //30
+        estimatedUtility += kingWeight * (countKings(myStones) - countKings(enemyStones));
+        estimatedUtility -= noEnemyStones;
 
         if(state.isTerminal()){
             if(state.isDraw()){
                 estimatedUtility += 5000/depth;
             }
-            else if(state.getWinner().getName().equals(isAgentPlayerOne ? state.getPlayerOneName() : state.getPlayerTwoName())){
+            else if(state.getWinner().getName().equals(this.name)){
                 estimatedUtility += 10000/depth;
             }
             else{
                 estimatedUtility -= 10000/depth;
             }
         }
-        //TODO: add jump opportunities for MAX in leaf node to evaluation function
-        estimatedUtility += stoneWeight / state.gameStage * (noMyStones - noEnemyStones); //10, 20, 30, 40...
-        estimatedUtility += kingWeight / state.gameStage * (countKings(myStones) - countKings(enemyStones)); //50, 100, 150...
-        estimatedUtility += (noMyStones + countKings(myStones) * 50); //<20
-        estimatedUtility += movementWeight * (myMovementEvaluation); //-10 to 10
 
         return estimatedUtility + (estimatedUtility % 2 == 0 ? random : -random);
     }

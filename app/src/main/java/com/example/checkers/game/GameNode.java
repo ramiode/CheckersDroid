@@ -204,7 +204,7 @@ public class GameNode<S,A>{
         }
     }
     public GameNode<S, A> clone(){
-        return new GameNode(this.state.clone(), action, null, this.depth);
+        return new GameNode(this.state, action, null, this.depth);
     }
 
 }

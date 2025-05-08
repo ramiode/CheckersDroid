@@ -96,7 +96,7 @@ public class MinimaxAgent extends Agent{
 
         for(Action a : actions){
             clonedState.updateStateWithAction(a);
-            int res = recursiveSearchForMove(state, depth, depth, Integer.MIN_VALUE, Integer.MAX_VALUE, false);
+            int res = recursiveSearchForMove(clonedState, depth, depth, Integer.MIN_VALUE, Integer.MAX_VALUE, false);
             if(res > bestUtility){
                 bestUtility = res;
                 bestChild = a;

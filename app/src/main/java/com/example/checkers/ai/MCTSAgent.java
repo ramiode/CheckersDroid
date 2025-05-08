@@ -5,7 +5,10 @@ import com.example.checkers.game.GameState;
 import com.example.checkers.game.models.actions.Action;
 
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A concrete implementation of an Agent using the Monte Carlo Tree Search algorithm.
@@ -13,7 +16,7 @@ import java.util.List;
  * @author Ramiar Odendaal
  */
 public class MCTSAgent extends Agent{
-    //TODO: Implement timeout, tree reuse?
+    private GameNode<GameState, Action> lastNode;
     public MCTSAgent(String name, int timeSlice, boolean isAgentPlayerOne) {
         super(name, timeSlice, isAgentPlayerOne);
     }
@@ -29,19 +32,44 @@ public class MCTSAgent extends Agent{
             return availableActions.get(0);
         }
 
-        int budget = 8000;
-        GameNode<GameState, Action> root = new GameNode<>(clonedState, null, null, 0);
-        while(budget>0){
-            GameNode<GameState, Action> selectedNode = selectionStep(root);
+        return monteCarloTreeSearch(clonedState).action;
+    }
+
+    private GameNode<GameState, Action> monteCarloTreeSearch(GameState state){
+        AtomicInteger budget = new AtomicInteger(50000);
+        Thread t = new Thread(() -> {
+            try {
+                Thread.sleep(timeSlice);
+                budget.set(0);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+        t.start();
+
+        GameNode<GameState, Action> root = new GameNode<>(state, null, null, 0);
+        //Do I need to reset rewards? Use node.equals
+        if(lastNode != null) {
+            lastNode = lastNode.getAllChildNodes().stream()
+                    .filter(node -> node.state.equals(state))
+                    .findFirst()
+                    .orElse(root)
+                    .clone();
+        }
+        else{
+            lastNode = root;
+        }
+        while(budget.get() > 0){
+            GameNode<GameState, Action> selectedNode = selectionStep(lastNode);
             GameNode<GameState, Action> expandedNode = expansionStep(selectedNode);
             int estimatedUtility = playoutStep(expandedNode);
             backPropagationStep(expandedNode, estimatedUtility);
-            budget--;
+            budget.getAndDecrement();
         }
-        return root.getAllChildNodes().stream()
+        lastNode = lastNode.getAllChildNodes().stream()
                 .max(Comparator.comparingInt(GameNode::getReward))
-                .map(node -> node.action)
                 .get();
+        return lastNode;
     }
 
     /**
@@ -53,7 +81,7 @@ public class MCTSAgent extends Agent{
     private GameNode<GameState, Action> selectionStep(GameNode<GameState, Action> node){
         if(!node.isTerminal() && node.isFullyExplored()){
             return selectionStep(node.getAllChildNodes().stream()
-                    .max(Comparator.comparingInt(this::uct))
+                    .max(Comparator.comparingDouble(this::uct))
                     .orElse(node));
         }
         return node;
@@ -65,8 +93,15 @@ public class MCTSAgent extends Agent{
      * @param node The node to be evaluated.
      * @return The current UCT value of the node
      */
-    private int uct(GameNode<GameState, Action> node){
-        return (int) ((node.getReward()/node.getVisits()) + Math.sqrt((Math.log(node.parent.getVisits())/Math.log(2)/node.getVisits())));
+    private double uct(GameNode<GameState, Action> node) {
+        if (node.getVisits() == 0) {
+            return Double.POSITIVE_INFINITY;
+        }
+        double exploitationTerm = (double) node.getReward() / node.getVisits();
+        double explorationTerm = Math.sqrt(Math.log(node.parent.getVisits()) / node.getVisits());
+        double C = Math.sqrt(2);
+
+        return exploitationTerm + C * explorationTerm;
     }
 
     /**
@@ -83,7 +118,6 @@ public class MCTSAgent extends Agent{
             return node;
         }
     }
-    //TODO: Save all actions in a list and undo them?
 
     /**
      * Simulates a series of moves from the node until a terminal state or a maximum depth is reached.
@@ -92,32 +126,33 @@ public class MCTSAgent extends Agent{
      * @return the estimated utility of the furthest node reached
      */
     private int playoutStep(GameNode<GameState, Action> node){
-
-        GameNode<GameState, Action> currentNode = new GameNode<>(node.state.clone(), node.action, node.parent, node.depth);
-        int depth = 10;
-        while(!currentNode.isTerminal() && depth > 0){
-            Action randomAction = currentNode.getRandomAction();
-            currentNode = currentNode.successor(currentNode.state.updateStateWithAction(randomAction), randomAction);
+        GameState state = node.state;
+        int depth = 100;
+        LinkedList<Action> undoList = new LinkedList<>();
+        Random random = new Random();
+        while(!state.isTerminal() && depth > 0){
+            List<Action> availableActions = state.generateLegalActions();
+            //Action randomAction = availableActions.get(random.nextInt(availableActions.size()));
+            int maxUtility = Integer.MIN_VALUE;
+            Action randomAction = null;
+            for(Action action : availableActions){
+                state.updateStateWithAction(action);
+                int utility = evaluate(state, node.depth + (100 - depth));
+                if(utility > maxUtility){
+                    randomAction = action;
+                    maxUtility = utility;
+                }
+                state.updateStateWithUndoAction(action);
+            }
+            state.updateStateWithAction(randomAction);
+            undoList.push(randomAction);
             depth--;
         }
-
-        /*
-        GameNode<GameState, Action> currentNode = new GameNode<>(node.state, null, null, node.depth);
-        int depth = 10;
-        while(!currentNode.isTerminal() && depth > 0){
-            Action randomAction = currentNode.getRandomAction();
-            GameState updatedState = currentNode.state.updateStateWithAction(randomAction);
-            currentNode = currentNode.successor(updatedState, randomAction);
-            depth--;
+        int estimatedUtility = evaluate(state, node.depth + (100-depth));
+        for(int i = 0; i < undoList.size(); i++){
+            state.updateStateWithUndoAction(undoList.pop());
         }
-        int estimatedUtility = evaluate(currentNode.state, currentNode.depth);
-        List<Action> executedActions = currentNode.getActions();
-        for(int i = executedActions.size() - 1; i >= 0; i--){
-            node.state.updateStateWithUndoAction(executedActions.get(i));
-        }
-
-         */
-        return evaluate(currentNode.state, currentNode.depth);
+        return estimatedUtility;
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.example.checkers.game.models;
 
+import com.example.checkers.game.RuleEnforcer;
 import com.example.checkers.game.models.actions.Action;
 import com.example.checkers.game.models.actions.JumpAction;
 import com.example.checkers.game.models.actions.MoveAction;
@@ -14,6 +15,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * The model representation of the GameBoard. Handles Stone placement and manages board state.
@@ -194,7 +196,20 @@ public class GameBoardModel implements Cloneable, Subject {
             playerTwoStones.removeIf(element -> element.getId() == stone.getId());
         }
     }
-
+    public int checkAdjacentFriendlyStones(Stone stone){
+        int[] directions = AppConstants.KING_DIRECTIONS;
+        int countAdjacent = 0;
+        for(int direction : directions){
+            int adjacentPosition = stone.getPosition() + direction;
+            if(!RuleEnforcer.isOutOfBounds(adjacentPosition)) {
+                Stone adjacentStone = getStoneByPosition(adjacentPosition);
+                if (adjacentStone != null && adjacentStone.getPlayerColor().equals(stone.getPlayerColor())) {
+                    countAdjacent++;
+                }
+            }
+        }
+        return countAdjacent;
+    }
     /**
      * Reverses a previous action to undo changes to the board.
      *
@@ -228,11 +243,12 @@ public class GameBoardModel implements Cloneable, Subject {
     private void undoJump(JumpAction jump){
         boolean isRed = jump.getStone().getPlayerColor().equals(AppConstants.PLAYER_RED);
         jump.getCapturedStones().forEach(stone -> {
+            //not the exact same stone objects
             placeStone(stone, stone.getPosition());
             boolean b = isRed ? playerTwoStones.add(stone) : playerOneStones.add(stone);
         });
         int originPos = jump.getStartingPos();
-        Stone playerStone = getStoneByPosition(jump.getStone().getPosition());
+        Stone playerStone = jump.getStone();
         MoveAction move = new MoveAction(playerStone.getPosition(), originPos, jump.getActingPlayer(), playerStone);
         executeMove(move);
     }
@@ -327,5 +343,32 @@ public class GameBoardModel implements Cloneable, Subject {
         //System.out.print(textBoard);
         //System.out.println("+++++++++++++++++++");
         return textBoard;
+    }
+
+    public boolean equals(GameBoardModel model){
+        for(int i = 0; i < AppConstants.NO_TILES; i++){
+            if(model.getStoneByPosition(i) == null){
+                if(!(this.getStoneByPosition(i) == model.getStoneByPosition(i))){
+                    return false;
+                }
+            }
+            else{
+                if(this.getStoneByPosition(i) == null){
+                    return false;
+                }
+                if(!(this.getStoneByPosition(i).getId() == model.getStoneByPosition(i).getId())){
+                    return false;
+                }
+            }
+        }
+        if(model.getPlayerOneStones().size() != this.playerOneStones.size()){
+            return false;
+        }
+        else if(model.getPlayerTwoStones().size() != this.playerTwoStones.size()){
+            return false;
+        }
+        boolean playerOneMatch = IntStream.range(0, model.getPlayerOneStones().size()).allMatch(i -> model.getPlayerOneStones().get(i).getId() == this.playerOneStones.get(i).getId());
+        boolean playerTwoMatch = IntStream.range(0, model.getPlayerTwoStones().size()).allMatch(i -> model.getPlayerTwoStones().get(i).getId() == this.playerTwoStones.get(i).getId());
+        return playerOneMatch && playerTwoMatch;
     }
 }

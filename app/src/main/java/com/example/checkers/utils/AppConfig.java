@@ -7,7 +7,7 @@ public class AppConfig {
     private static final int EASY_DIFFICULTY = 100;
     private static final int MEDIUM_DIFFICULTY = 500;
     private static final int HARD_DIFFICULTY = 1000;
-    private static final int VERY_HARD_DIFFICULTY=  10000;
+    private static final int VERY_HARD_DIFFICULTY=  5000;
     public static final String EASY = "Easy";
     public static final String MEDIUM = "Medium";
     public static final String HARD = "Hard";
