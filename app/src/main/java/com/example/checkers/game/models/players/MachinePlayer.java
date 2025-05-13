@@ -3,6 +3,7 @@ package com.example.checkers.game.models.players;
 import com.example.checkers.ai.Agent;
 import com.example.checkers.ai.MCTSAgent;
 import com.example.checkers.ai.MinimaxAgent;
+import com.example.checkers.ai.RandomAgent;
 import com.example.checkers.game.GameState;
 import com.example.checkers.game.models.actions.Action;
 import com.example.checkers.utils.AppConfig;

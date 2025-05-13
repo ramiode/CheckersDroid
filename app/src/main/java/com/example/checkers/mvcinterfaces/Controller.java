@@ -22,6 +22,8 @@ public interface Controller {
      */
     void updateMoveStoneInUI(Stone stone);
 
+    void resetBoard();
+
     /**
      * Used by models to update the log text with game information.
      *

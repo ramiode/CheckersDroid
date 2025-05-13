@@ -26,6 +26,7 @@ public class GameState implements Cloneable {
     private int redStones = 0;
     private int whiteStones = 0;
     private final Player playerOne;
+    private Action latestAction;
     private final Player playerTwo;
     private Player currentPlayer;
 
@@ -220,30 +221,17 @@ public class GameState implements Cloneable {
      * @return the updated state
      */
     public GameState updateStateWithAction(Action action) {
-        /*
-        Doesnt work
-        if(moveCounter >= 50){
-            if(redStones == board.getPlayerOneStones().size() && whiteStones == board.getPlayerTwoStones().size()){
-                isDraw = true;
-            }
-            else{
-                moveCounter = 0;
-            }
-        }
-        if(moveCounter <= 0){
-            redStones = board.getPlayerOneStones().size();
-            whiteStones = board.getPlayerTwoStones().size();
-        }
-
-         */
-        moveCounter++;
+        latestAction = action;
         setGameStage();
         board.executeAction(action);
         switchPlayer();
-        currentBoard = board.printBoard();
+        //currentBoard = board.printBoard();
         return this;
     }
 
+    public Action getLatestAction(){
+        return latestAction;
+    }
     /**
      * Undos an action. Can be used for any action, but reserved for actions that have been done previously.
      *
@@ -254,7 +242,7 @@ public class GameState implements Cloneable {
         setGameStage();
         board.undoAction(action);
         switchPlayer();
-        currentBoard = board.printBoard();
+        //currentBoard = board.printBoard();
     }
 
     /**
@@ -321,7 +309,7 @@ public class GameState implements Cloneable {
      * @return the player who has won the game
      */
     public Player getWinner(){
-        return currentPlayer;
+        return currentPlayer.getName().equals(playerOne.getName()) ? playerTwo : playerOne;
     }
 
     public boolean isDraw(){
@@ -332,6 +320,7 @@ public class GameState implements Cloneable {
         try {
             GameState clonedState = (GameState) super.clone();
             clonedState.board = board.clone();
+            clonedState.latestAction = this.latestAction;
             return clonedState;
         }
         catch (CloneNotSupportedException e) {

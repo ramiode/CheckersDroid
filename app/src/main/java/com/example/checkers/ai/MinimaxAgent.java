@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Ramiar Odendaal
  */
 public class MinimaxAgent extends Agent{
-    private int counter;
     public MinimaxAgent(String name, int timeSlice, boolean isPlayerAgentOne) {
         super(name, timeSlice, isPlayerAgentOne);
     }
@@ -35,7 +34,7 @@ public class MinimaxAgent extends Agent{
         if(actions.size() == 1){
             return actions.get(0);
         }
-        //TODO: Check if clonedstate and state are equal in the end to see if undo works
+        counter++;
         return iterativeDeepeningSearch(state, DEPTH_LIMIT, actions);
     }
 
@@ -76,9 +75,6 @@ public class MinimaxAgent extends Agent{
             //res.cancel(true);
             generatedAction = bestChildSoFar.get();
         }
-        finally{
-            executor.shutdown();
-        }
 
         if(generatedAction == null){
             Random r = new Random();
@@ -115,7 +111,6 @@ public class MinimaxAgent extends Agent{
             return 0;
         }
         if(depth == 0 || state.isTerminal()){
-            counter++;
             return evaluate(state, limit-depth);
         }
         GameState updatedState = state.clone();

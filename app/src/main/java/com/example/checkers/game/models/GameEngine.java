@@ -26,6 +26,7 @@ public class GameEngine implements Subject {
     private volatile boolean isRunning;
     private GameState currentState;
     private Thread gameThread;
+    private int counter = 100;
     private final List<Controller> controllers;
 
     /**
@@ -34,12 +35,10 @@ public class GameEngine implements Subject {
      * @param controller the controller for this model
      */
     public GameEngine(Controller controller) {
-        //TODO: Game engine should define the players
         this.playerOne = AppConfig.isPlayerOneHuman ? new HumanPlayer(true, "One") : new MachinePlayer(true, "One", AppConfig.playerOneModel.equals(AppConfig.MINIMAX));
         this.playerTwo = AppConfig.isPlayerTwoHuman ? new HumanPlayer(false, "Two") : new MachinePlayer(false, "Two", AppConfig.playerTwoModel.equals(AppConfig.MINIMAX));
         playerOne.addController(controller);
         playerTwo.addController(controller);
-        //this.playerTwo = new MachinePlayer(false, "Brad", true);
         GameBoardModel model = new GameBoardModel();
         model.initializeStones(true);
         this.currentState = new GameState(model, playerOne, playerTwo, playerOne);
@@ -52,6 +51,7 @@ public class GameEngine implements Subject {
         model.initializeStones(true);
         this.currentState = new GameState(model, playerOne, playerTwo, playerOne);
         gameThread.interrupt();
+        controllers.get(0).resetBoard();
         startGame();
     }
     /**
@@ -67,7 +67,10 @@ public class GameEngine implements Subject {
                 latch = new CountDownLatch(1);
                 try {
                     if (currentState.isTerminal()) {
-                        gameLogger.printSystemText(String.format("Game over: %s wins.", turnToPlay.getName()), controllers.get(0));
+                        gameLogger.printSystemText(String.format("Game over: %s wins.", currentState.getWinner().getName()), controllers.get(0));
+                        //TODO: Probably a really bad idea
+                        //Could log the match results here
+                        //restartGame();
                         break;
                     }
 
@@ -100,7 +103,6 @@ public class GameEngine implements Subject {
 
         gameThread = new Thread(gameLoop);
         gameThread.start();
-
     }
 
     /**

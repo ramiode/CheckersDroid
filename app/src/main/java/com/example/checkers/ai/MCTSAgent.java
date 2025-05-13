@@ -17,6 +17,18 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class MCTSAgent extends Agent{
     private GameNode<GameState, Action> lastNode;
+    private Random random = new Random();
+    private AtomicInteger budget = new AtomicInteger();
+    private Runnable timeOutTask = () -> {
+        try {
+            long start = System.currentTimeMillis();
+            Thread.sleep(timeSlice);
+            long end = System.currentTimeMillis() - start;
+            budget.set(0);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    };
     public MCTSAgent(String name, int timeSlice, boolean isAgentPlayerOne) {
         super(name, timeSlice, isAgentPlayerOne);
     }
@@ -32,45 +44,29 @@ public class MCTSAgent extends Agent{
             return availableActions.get(0);
         }
 
+        counter++;
         return monteCarloTreeSearch(clonedState).action;
     }
-
+    //TODO: Run in separate thread
     private GameNode<GameState, Action> monteCarloTreeSearch(GameState state){
-        AtomicInteger budget = new AtomicInteger(50000);
-        Thread t = new Thread(() -> {
-            try {
-                Thread.sleep(timeSlice);
-                budget.set(0);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        });
-        t.start();
-
+        int budget = 8000;
         GameNode<GameState, Action> root = new GameNode<>(state, null, null, 0);
-        //Do I need to reset rewards? Use node.equals
-        if(lastNode != null) {
-            lastNode = lastNode.getAllChildNodes().stream()
-                    .filter(node -> node.state.equals(state))
-                    .findFirst()
-                    .orElse(root)
-                    .clone();
-        }
-        else{
-            lastNode = root;
-        }
-        while(budget.get() > 0){
-            GameNode<GameState, Action> selectedNode = selectionStep(lastNode);
+        long searchStartTime = System.currentTimeMillis();
+        while(budget > 0){
+            GameNode<GameState, Action> selectedNode = selectionStep(root);
             GameNode<GameState, Action> expandedNode = expansionStep(selectedNode);
-            int estimatedUtility = playoutStep(expandedNode);
+            long playoutStartTime = System.currentTimeMillis();
+            double estimatedUtility = playoutStep(expandedNode);
+            long playoutEndTime = System.currentTimeMillis() - playoutStartTime;
             backPropagationStep(expandedNode, estimatedUtility);
-            budget.getAndDecrement();
+            budget--;
         }
-        lastNode = lastNode.getAllChildNodes().stream()
-                .max(Comparator.comparingInt(GameNode::getReward))
+        long end = System.currentTimeMillis() - searchStartTime;
+        return root.getAllChildNodes().stream()
+                .max(Comparator.comparingDouble(node -> node.getReward()/node.getVisits()))
                 .get();
-        return lastNode;
     }
+
 
     /**
      * Selects the next node based on the value provided by the UCT formula.
@@ -82,8 +78,9 @@ public class MCTSAgent extends Agent{
         if(!node.isTerminal() && node.isFullyExplored()){
             return selectionStep(node.getAllChildNodes().stream()
                     .max(Comparator.comparingDouble(this::uct))
-                    .orElse(node));
+                    .get());
         }
+        //TODO: Check if selection is working properly
         return node;
     }
 
@@ -97,10 +94,10 @@ public class MCTSAgent extends Agent{
         if (node.getVisits() == 0) {
             return Double.POSITIVE_INFINITY;
         }
-        double exploitationTerm = (double) node.getReward() / node.getVisits();
+        double exploitationTerm = node.getReward() / node.getVisits();
         double explorationTerm = Math.sqrt(Math.log(node.parent.getVisits()) / node.getVisits());
         double C = Math.sqrt(2);
-
+        //TODO: Check if UCT is calculated properly
         return exploitationTerm + C * explorationTerm;
     }
 
@@ -111,10 +108,10 @@ public class MCTSAgent extends Agent{
      * @return The new child node
      */
     private GameNode<GameState, Action> expansionStep(GameNode<GameState, Action> node){
-        try{
+        if(!node.isTerminal() && !node.isFullyExplored()){
             return node.generateNextChildNode();
         }
-        catch(IllegalStateException e){
+        else{
             return node;
         }
     }
@@ -125,30 +122,31 @@ public class MCTSAgent extends Agent{
      * @param node the start of the simulation
      * @return the estimated utility of the furthest node reached
      */
-    private int playoutStep(GameNode<GameState, Action> node){
+    private double playoutStep(GameNode<GameState, Action> node){
         GameState state = node.state;
-        int depth = 100;
+        int depth = 10;
         LinkedList<Action> undoList = new LinkedList<>();
-        Random random = new Random();
+        //TODO: Implement successor instead, maybe guided moves not random
         while(!state.isTerminal() && depth > 0){
             List<Action> availableActions = state.generateLegalActions();
-            //Action randomAction = availableActions.get(random.nextInt(availableActions.size()));
-            int maxUtility = Integer.MIN_VALUE;
-            Action randomAction = null;
-            for(Action action : availableActions){
-                state.updateStateWithAction(action);
-                int utility = evaluate(state, node.depth + (100 - depth));
-                if(utility > maxUtility){
-                    randomAction = action;
-                    maxUtility = utility;
-                }
-                state.updateStateWithUndoAction(action);
-            }
+            Action randomAction = availableActions.get(random.nextInt(availableActions.size()));
             state.updateStateWithAction(randomAction);
             undoList.push(randomAction);
             depth--;
         }
-        int estimatedUtility = evaluate(state, node.depth + (100-depth));
+        double estimatedUtility = 0;
+        if (state.isTerminal()) {
+            if(!state.isDraw()){
+                estimatedUtility = state.getWinner().getName().equals(this.name) ? 1 : -1;
+            }
+            else{
+                estimatedUtility = 0.5;
+            }
+        }
+        else{
+            estimatedUtility = evaluate(state, node.depth + 10 - depth)/3000f; //divide by max evaluation return
+        }
+
         for(int i = 0; i < undoList.size(); i++){
             state.updateStateWithUndoAction(undoList.pop());
         }
@@ -160,7 +158,7 @@ public class MCTSAgent extends Agent{
      * @param node the node used in the simulation
      * @param reward the estimated utility returned from the simulation
      */
-    private void backPropagationStep(GameNode<GameState, Action> node, int reward){
+    private void backPropagationStep(GameNode<GameState, Action> node, double reward){
         GameNode<GameState, Action> currentNode = node;
         while(currentNode != null){
             currentNode.update(reward);

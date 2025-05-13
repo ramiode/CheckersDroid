@@ -18,13 +18,12 @@ import java.util.Set;
  */
 public class GameNode<S,A>{
     public final GameState state;
-    public final GameNode<S, A> parent;
+    public GameNode<S, A> parent;
     public final Action action;
     public final int depth;
-    //TODO: Add a way to check if equals so the set will be unique
-    private final Set<GameNode<S,A>> childNodes;
+    private Set<GameNode<S,A>> childNodes;
     private Random random = new Random();
-    private int reward;
+    private double reward;
     private int visits;
     private List<Action> unexploredActions;
 
@@ -57,6 +56,17 @@ public class GameNode<S,A>{
         return action;
     }
 
+    public void resetChildren(){
+        childNodes = null;
+    }
+
+    public void resetParent(){
+        if(this.parent != null){
+            parent.resetChildren();
+        }
+        this.parent = null;
+    }
+
     /**
      * Returns true if and only if the node is fully explored.
      *
@@ -79,7 +89,7 @@ public class GameNode<S,A>{
      * Gets the current reward (potential) of this node.
      * @return the reward
      */
-    public int getReward(){
+    public double getReward(){
         return reward;
     }
 
@@ -97,7 +107,7 @@ public class GameNode<S,A>{
      *
      * @param value the estimated utility to be added to the reward
      */
-    public void update(int value){
+    public void update(double value){
         visits++;
         this.reward += value;
     }
@@ -170,14 +180,13 @@ public class GameNode<S,A>{
             return new GameNode<>(state, action, this, depth + 1);
         }
     }
-    //TODO: IS THIS USEFUL?
     public boolean equals(GameNode<S, A> node) {
         if (this == node) {
             return true;
         }
         else if (node != null) {
             if (this.depth == node.depth && this.visits == node.visits) {
-                if (Integer.compare(node.reward, this.reward) != 0) {
+                if (Double.compare(node.reward, this.reward) != 0) {
                     return false;
                 }
                 else if (!this.state.equals(node.state)) {
@@ -204,7 +213,7 @@ public class GameNode<S,A>{
         }
     }
     public GameNode<S, A> clone(){
-        return new GameNode(this.state, action, null, this.depth);
+        return new GameNode(this.state.clone(), action, null, this.depth);
     }
 
 }

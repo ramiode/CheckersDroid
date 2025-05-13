@@ -86,13 +86,6 @@ public class GameActivity extends AppCompatActivity implements Controller {
 
         logText = findViewById(R.id.textView2);
         logText.setText("");
-        //Model components
-        //Player playerOne = AppConfig.isPlayerOneHuman ? new HumanPlayer(true, "One") : new MachinePlayer(true, "One", AppConfig.playerOneModel.equals(AppConfig.MINIMAX));
-        //Player playerOne = new MachinePlayer(true, "One", true);
-        //Player playerTwo = AppConfig.isPlayerTwoHuman ? new HumanPlayer(false, "Two") : new MachinePlayer(false, "Two", AppConfig.playerTwoModel.equals(AppConfig.MINIMAX));
-
-        //playerTwo.addController(this);
-        //playerOne.addController(this);
 
         engine = new GameEngine(this);
         engine.addController(this);
@@ -246,6 +239,23 @@ public class GameActivity extends AppCompatActivity implements Controller {
             ScrollView scroll = findViewById(R.id.scrollView);
             scroll.post(() -> scroll.fullScroll(View.FOCUS_DOWN));
         });
+    }
+
+    public void resetBoard(){
+        FrameLayout mainLayout = findViewById(R.id.MainLayout);
+        mainLayout.removeView(gameBoardViewGroup);
+        gameBoardViewGroup = new GameBoardViewGroup(this);
+        gameBoardViewGroup.setLayoutParams(new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
+        //mainLayout.addView(gameBoardViewGroup);
+        View.OnClickListener listener = new OnBoardClickListener();
+        //Add listener to all TileViews on the board
+        gameBoardViewGroup.initializeBoard(listener);
+        mainLayout.addView(gameBoardViewGroup);
+
+        gameBoardViewGroup.initializeStones(engine.getPlayerOneStones(), AppConstants.RED_STONE);
+        gameBoardViewGroup.initializeStones(engine.getPlayerTwoStones(), AppConstants.WHITE_STONE);
     }
 
     /**

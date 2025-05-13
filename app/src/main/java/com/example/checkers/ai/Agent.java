@@ -17,27 +17,26 @@ import java.util.concurrent.Executors;
  * @author Ramiar Odendaal
  */
 public abstract class Agent {
-    //TODO: Tweak weights, optimize late game play
-    protected final int DEPTH_LIMIT = 20;
-
+    protected final int DEPTH_LIMIT = 10;
+    protected int counter = 0;
     private final int[] RED_POSITIONAL_SCORES = new int[] {
-            8, 0, 8, 0, 8, 0, 8, 0,
-            3, 0, 3, 0, 3, 0, 3, 0,
-            2, 0, 2, 0, 2, 0, 2, 0,
-            1, 0, 1, 0, 1, 0, 1, 0,
-            1, 0, 1, 0, 1, 0, 1, 0,
-            2, 0, 2, 0, 2, 0, 2, 0,
-            3, 0, 3, 0, 3, 0, 3, 0,
+            0, 8, 0, 8, 0, 8, 0, 8,
+            7, 0, 7, 0, 7, 0, 7, 0,
+            0, 6, 0, 6, 0, 6, 0, 0,
+            0, 0, 6, 0, 6, 0, 6, 0,
+            0, 6, 0, 6, 0, 6, 0, 0,
+            0, 0, 4, 0, 4, 0, 4, 0,
+            0, 4, 0, 4, 0, 4, 0, 0,
             8, 0, 8, 0, 8, 0, 8, 0
     };
     private final int[] WHITE_POSITIONAL_SCORES = new int[] {
-            8, 0, 8, 0, 8, 0, 8, 0,
-            3, 0, 3, 0, 3, 0, 3, 0,
-            2, 0, 2, 0, 2, 0, 2, 0,
-            1, 0, 1, 0, 1, 0, 1, 0,
-            1, 0, 1, 0, 1, 0, 1, 0,
-            2, 0, 2, 0, 2, 0, 2, 0,
-            3, 0, 3, 0, 3, 0, 3, 0,
+            0, 8, 0, 8, 0, 8, 0, 8,
+            0, 0, 4, 0, 4, 0, 4, 0,
+            0, 4, 0, 4, 0, 4, 0, 0,
+            0, 0, 6, 0, 6, 0, 6, 0,
+            0, 6, 0, 6, 0, 6, 0, 0,
+            0, 0, 6, 0, 6, 0, 6, 0,
+            0, 7, 0, 7, 0, 7, 0, 7,
             8, 0, 8, 0, 8, 0, 8, 0
     };
 
@@ -45,7 +44,7 @@ public abstract class Agent {
     protected int timeSlice;
     protected ExecutorService executor;
     protected final boolean isAgentPlayerOne;
-    private int stoneWeight = 50, kingWeight = 100, movementWeight = 1, triangleWeight = 1;
+    private int stoneWeight = 100, kingWeight = 150, movementWeight = 1, triangleWeight = 1;
 
     public Agent(String name, int timeSlice, boolean isAgentPlayerOne){
         this.name = name;
@@ -67,8 +66,21 @@ public abstract class Agent {
      * @return An integer representing the estimated utility of the state.
      */
     protected int evaluate(GameState state, int depth){
+        depth = depth == 0 ? 1 : depth;
+        if(state.isTerminal()){
+            if(state.isDraw()){
+               return Integer.MAX_VALUE/(2*depth);
+            }
+            else if(state.getWinner().getName().equals(this.name)){
+                return Integer.MAX_VALUE/depth;
+            }
+            else{
+                return Integer.MIN_VALUE/depth;
+            }
+        }
+
         Random r = new Random();
-        int random = r.nextInt(2);
+        int random = r.nextInt(3);
         int estimatedUtility = 0;
 
         List<Stone> myStones = isAgentPlayerOne ? state.getBoard().getPlayerOneStones() : state.getBoard().getPlayerTwoStones();
@@ -87,24 +99,11 @@ public abstract class Agent {
                 .reduce(Integer::sum)
                 .orElse(0);
 
-        estimatedUtility += stoneWeight * Math.pow(state.gameStage, 2) * (noMyStones - noEnemyStones); //10, 20, 30, 40...
-        //estimatedUtility += kingWeight / state.gameStage * (countKings(myStones) - countKings(enemyStones)); //50, 100, 150...
-        estimatedUtility += triangleWeight * triangleFormationEvaluation; //30
+        estimatedUtility += stoneWeight * (noMyStones - noEnemyStones); //10, 20, 30, 40...
+        estimatedUtility += triangleWeight * triangleFormationEvaluation;
         estimatedUtility += movementWeight * (myMovementEvaluation); //30
         estimatedUtility += kingWeight * (countKings(myStones) - countKings(enemyStones));
-        estimatedUtility -= noEnemyStones;
-
-        if(state.isTerminal()){
-            if(state.isDraw()){
-                estimatedUtility += 5000/depth;
-            }
-            else if(state.getWinner().getName().equals(this.name)){
-                estimatedUtility += 10000/depth;
-            }
-            else{
-                estimatedUtility -= 10000/depth;
-            }
-        }
+        estimatedUtility += noMyStones;
 
         return estimatedUtility + (estimatedUtility % 2 == 0 ? random : -random);
     }
@@ -115,5 +114,9 @@ public abstract class Agent {
         return (int) stones.stream()
                 .filter(stone -> stone.getKingStatus() == true)
                 .count();
+    }
+
+    public int getNumberOfMoves(){
+       return counter;
     }
 }
