@@ -76,7 +76,7 @@ public class SettingsActivity extends AppCompatActivity {
                     currentText = AppConfig.EASY;
                     break;
             }
-            AppConfig.setTimeSlice(currentText);
+            AppConfig.setDifficulty(currentText);
             difficultyButton.setText(currentText);
         });
     }

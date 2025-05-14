@@ -18,6 +18,8 @@ public class AppConfig {
     public static boolean isPlayerOneHuman;
     public static boolean isPlayerTwoHuman;
     public static int timeSlice = 1000;
+    public static int mcts_budget = 1000;
+    public static int minimax_depth = 5;
     public static String playerOneModel = MINIMAX;
     public static String playerTwoModel = MINIMAX;
 
@@ -31,22 +33,24 @@ public class AppConfig {
             isPlayerTwoHuman = s.equals(HUMAN) ? true : false;
         }
     }
-    public static void setTimeSlice(String s){
+    public static void setDifficulty(String s){
         switch (s) {
             case EASY:
-                timeSlice = EASY_DIFFICULTY;
+                minimax_depth = 3;
+                mcts_budget = 500;
                 break;
             case MEDIUM:
-                timeSlice = MEDIUM_DIFFICULTY;
+                minimax_depth = 5;
+                mcts_budget = 2000;
                 break;
             case HARD:
-                timeSlice = HARD_DIFFICULTY;
+                minimax_depth = 7;
+                mcts_budget = 4000;
                 break;
             case VERY_HARD:
-                timeSlice = VERY_HARD_DIFFICULTY;
+                minimax_depth = 8;
+                mcts_budget = 8000;
                 break;
-            default:
-                timeSlice = 2000; // optional default case
         }
     }
 

@@ -19,6 +19,7 @@ import java.util.concurrent.Executors;
 public abstract class Agent {
     protected final int DEPTH_LIMIT = 10;
     protected int counter = 0;
+    protected Random r = new Random();
     private final int[] RED_POSITIONAL_SCORES = new int[] {
             0, 8, 0, 8, 0, 8, 0, 8,
             7, 0, 7, 0, 7, 0, 7, 0,
@@ -79,7 +80,6 @@ public abstract class Agent {
             }
         }
 
-        Random r = new Random();
         int random = r.nextInt(3);
         int estimatedUtility = 0;
 

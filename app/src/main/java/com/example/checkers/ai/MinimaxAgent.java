@@ -19,8 +19,10 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Ramiar Odendaal
  */
 public class MinimaxAgent extends Agent{
-    public MinimaxAgent(String name, int timeSlice, boolean isPlayerAgentOne) {
+    private int depthLimit;
+    public MinimaxAgent(String name, int timeSlice, int depth, boolean isPlayerAgentOne) {
         super(name, timeSlice, isPlayerAgentOne);
+        this.depthLimit = depth;
     }
 
     /**
@@ -34,54 +36,13 @@ public class MinimaxAgent extends Agent{
         if(actions.size() == 1){
             return actions.get(0);
         }
-        counter++;
-        return iterativeDeepeningSearch(state, DEPTH_LIMIT, actions);
-    }
-
-    /**
-     * Searches successively deeper through iteration. Each search is executed as a Callable and interrupts if the time limit is exceeded.
-     *
-     * @param state the initial state of the game
-     * @param depth the depth limit to progress towards
-     * @param actions a list of the possible actions for the agent
-     * @return the optimal move based on the search results
-     */
-    //TODO: FIX TIME OUT
-    private Action iterativeDeepeningSearch(GameState state, int depth, List<Action> actions){
-        executor = Executors.newSingleThreadExecutor();
-        AtomicReference<Action> bestChildSoFar = new AtomicReference<>();
-        Action generatedAction = null;
-        Callable<Action> iterativeSearcher = () -> {
-            for(int i = 1; i <= depth; i++){
-                if(Thread.currentThread().isInterrupted()){
-                    System.out.println("Reached depth " + i);
-                    return bestChildSoFar.get();
-                }
-                Action result = alphaBetaSearch(state, i);
-                bestChildSoFar.set(result);
-            }
-            return bestChildSoFar.get();
-        };
-
-        Future<Action> res = executor.submit(iterativeSearcher);
-
-        try{
-            generatedAction = res.get(timeSlice, TimeUnit.MILLISECONDS);
-        }
-        catch(ExecutionException | InterruptedException e){
-            //Thread.currentThread().interrupt();
-        }
-        catch (TimeoutException e) {
-            //res.cancel(true);
-            generatedAction = bestChildSoFar.get();
-        }
-
+        Action generatedAction = alphaBetaSearch(clonedState, depthLimit);
         if(generatedAction == null){
-            Random r = new Random();
-            int random = r.nextInt(actions.size());
-            generatedAction = actions.get(random);
+            return actions.get(r.nextInt(actions.size()));
         }
-        return generatedAction;
+        else{
+            return generatedAction;
+        }
     }
 
     private Action alphaBetaSearch(GameState state, int depth){
@@ -98,18 +59,12 @@ public class MinimaxAgent extends Agent{
                 bestChild = a;
             }
             clonedState.updateStateWithUndoAction(a);
-            if(Thread.currentThread().isInterrupted()){
-                return null;
-            }
         }
         return bestChild;
     }
 
 
     private int recursiveSearchForMove(GameState state, int depth, int limit, int alpha, int beta, boolean isMax){
-        if(Thread.currentThread().isInterrupted()){
-            return 0;
-        }
         if(depth == 0 || state.isTerminal()){
             return evaluate(state, limit-depth);
         }
@@ -132,10 +87,10 @@ public class MinimaxAgent extends Agent{
                 }
                 beta = Math.min(beta, currentBest);
             }
+            updatedState.updateStateWithUndoAction(a);
             if (beta <= alpha) {
                 break;
             }
-            updatedState.updateStateWithUndoAction(a);
         }
         return currentBest;
     }

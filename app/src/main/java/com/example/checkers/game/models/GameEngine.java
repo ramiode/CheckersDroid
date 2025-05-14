@@ -50,9 +50,9 @@ public class GameEngine implements Subject {
         GameBoardModel model = new GameBoardModel();
         model.initializeStones(true);
         this.currentState = new GameState(model, playerOne, playerTwo, playerOne);
-        gameThread.interrupt();
         controllers.get(0).resetBoard();
-        startGame();
+        this.currentState.getBoard().addController(controllers.get(0));
+        //startGame();
     }
     /**
      * Starts the game in a separate thread. Waits for the current player to make a move, executes it, notifies the controller, then switches to the other player in a loop.
@@ -67,11 +67,18 @@ public class GameEngine implements Subject {
                 latch = new CountDownLatch(1);
                 try {
                     if (currentState.isTerminal()) {
-                        gameLogger.printSystemText(String.format("Game over: %s wins.", currentState.getWinner().getName()), controllers.get(0));
-                        //TODO: Probably a really bad idea
+                        if(currentState.isDraw()){
+                            gameLogger.printSystemText("Game ends in draw after no captures and no stone movement for 40 turns.\n", controllers.get(0));
+                        }
+                        else {
+                            gameLogger.printSystemText(String.format("Game over: %s wins.\n", currentState.getWinner().getName()), controllers.get(0));
+                        }
                         //Could log the match results here
-                        //restartGame();
-                        break;
+                        Thread.sleep(1000);
+                        gameLogger.printSystemText("Restarting game...", controllers.get(0));
+                        Thread.sleep(1000);
+                        restartGame();
+                        //break;
                     }
 
                     turnToPlay = currentState.getCurrentPlayer();

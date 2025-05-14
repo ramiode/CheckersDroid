@@ -16,21 +16,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Ramiar Odendaal
  */
 public class MCTSAgent extends Agent{
-    private GameNode<GameState, Action> lastNode;
-    private Random random = new Random();
-    private AtomicInteger budget = new AtomicInteger();
-    private Runnable timeOutTask = () -> {
-        try {
-            long start = System.currentTimeMillis();
-            Thread.sleep(timeSlice);
-            long end = System.currentTimeMillis() - start;
-            budget.set(0);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    };
-    public MCTSAgent(String name, int timeSlice, boolean isAgentPlayerOne) {
+   private int budget;
+    public MCTSAgent(String name, int timeSlice, int budget, boolean isAgentPlayerOne) {
         super(name, timeSlice, isAgentPlayerOne);
+        this.budget = budget;
     }
 
     /**
@@ -43,25 +32,23 @@ public class MCTSAgent extends Agent{
         if(availableActions.size() == 1){
             return availableActions.get(0);
         }
-
-        counter++;
-        return monteCarloTreeSearch(clonedState).action;
+        GameNode<GameState, Action> node = monteCarloTreeSearch(clonedState);
+        //If not undone stone will remain in its updated position -- bad design
+        clonedState.updateStateWithUndoAction(node.action);
+        return node.action;
     }
     //TODO: Run in separate thread
     private GameNode<GameState, Action> monteCarloTreeSearch(GameState state){
-        int budget = 8000;
+        int budget = this.budget;
         GameNode<GameState, Action> root = new GameNode<>(state, null, null, 0);
         long searchStartTime = System.currentTimeMillis();
         while(budget > 0){
             GameNode<GameState, Action> selectedNode = selectionStep(root);
             GameNode<GameState, Action> expandedNode = expansionStep(selectedNode);
-            long playoutStartTime = System.currentTimeMillis();
             double estimatedUtility = playoutStep(expandedNode);
-            long playoutEndTime = System.currentTimeMillis() - playoutStartTime;
             backPropagationStep(expandedNode, estimatedUtility);
             budget--;
         }
-        long end = System.currentTimeMillis() - searchStartTime;
         return root.getAllChildNodes().stream()
                 .max(Comparator.comparingDouble(node -> node.getReward()/node.getVisits()))
                 .get();
@@ -80,7 +67,6 @@ public class MCTSAgent extends Agent{
                     .max(Comparator.comparingDouble(this::uct))
                     .get());
         }
-        //TODO: Check if selection is working properly
         return node;
     }
 
@@ -97,7 +83,7 @@ public class MCTSAgent extends Agent{
         double exploitationTerm = node.getReward() / node.getVisits();
         double explorationTerm = Math.sqrt(Math.log(node.parent.getVisits()) / node.getVisits());
         double C = Math.sqrt(2);
-        //TODO: Check if UCT is calculated properly
+
         return exploitationTerm + C * explorationTerm;
     }
 
@@ -122,35 +108,26 @@ public class MCTSAgent extends Agent{
      * @param node the start of the simulation
      * @return the estimated utility of the furthest node reached
      */
-    private double playoutStep(GameNode<GameState, Action> node){
-        GameState state = node.state;
+    private double playoutStep(GameNode<GameState, Action> node) {
+        GameNode<GameState, Action> currentNode = node.clone();
         int depth = 10;
-        LinkedList<Action> undoList = new LinkedList<>();
-        //TODO: Implement successor instead, maybe guided moves not random
-        while(!state.isTerminal() && depth > 0){
-            List<Action> availableActions = state.generateLegalActions();
-            Action randomAction = availableActions.get(random.nextInt(availableActions.size()));
-            state.updateStateWithAction(randomAction);
-            undoList.push(randomAction);
+        while(!currentNode.isTerminal() && depth > 0){
+            Action randomAction = currentNode.getRandomAction();
+            currentNode = currentNode.successor(currentNode.state.updateStateWithAction(randomAction), randomAction);
             depth--;
         }
-        double estimatedUtility = 0;
-        if (state.isTerminal()) {
-            if(!state.isDraw()){
-                estimatedUtility = state.getWinner().getName().equals(this.name) ? 1 : -1;
-            }
-            else{
-                estimatedUtility = 0.5;
+        double utility = 0;
+        if(currentNode.isTerminal()) {
+            if (currentNode.state.isDraw()) {
+                utility = 0;
+            } else {
+                utility = currentNode.state.getWinner().getName().equals(this.name) ? 1 : -1;
             }
         }
         else{
-            estimatedUtility = evaluate(state, node.depth + 10 - depth)/3000f; //divide by max evaluation return
+            utility = evaluate(currentNode.state, currentNode.depth) > 100 ? 1 : -1;
         }
-
-        for(int i = 0; i < undoList.size(); i++){
-            state.updateStateWithUndoAction(undoList.pop());
-        }
-        return estimatedUtility;
+        return utility;
     }
 
     /**

@@ -16,7 +16,6 @@ import java.util.Random;
  *
  * @author Ramiar Odendaal
  */
-//TODO: Implement the AI here
 public class MachinePlayer extends Player {
     private final Agent aiModel;
 
@@ -29,7 +28,12 @@ public class MachinePlayer extends Player {
      */
     public MachinePlayer(boolean isRed, String name, boolean isMinimax) {
         super(isRed, name);
-        aiModel = isMinimax ? new MinimaxAgent(name, AppConfig.timeSlice, isRed) : new MCTSAgent(name, AppConfig.timeSlice, isRed);
+        if(true) {
+            aiModel = isMinimax ? new MinimaxAgent(name, AppConfig.timeSlice, AppConfig.minimax_depth, isRed) : new MCTSAgent(name, AppConfig.timeSlice, AppConfig.mcts_budget, isRed);
+        }
+        else{
+            aiModel = new RandomAgent(name, 10, isRed);
+        }
     }
 
     /**

@@ -8,7 +8,7 @@ import com.example.checkers.game.models.players.Player;
  *
  * @author Ramiar Odendaal
  */
-public abstract class Action {
+public abstract class Action{
     private final Player actingPlayer;
     private final Stone currentStone;
 
@@ -57,5 +57,4 @@ public abstract class Action {
      * @return a string representing the action
      */
     public abstract String getActionMessage();
-
 }

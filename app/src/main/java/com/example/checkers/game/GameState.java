@@ -23,8 +23,8 @@ public class GameState implements Cloneable {
     private String currentBoard;
     private boolean isDraw;
     private int moveCounter = 0;
-    private int redStones = 0;
-    private int whiteStones = 0;
+    private int previousMoveCounter = 0;
+    private final int DRAW_LIMIT = 40;
     private final Player playerOne;
     private Action latestAction;
     private final Player playerTwo;
@@ -57,7 +57,7 @@ public class GameState implements Cloneable {
 
         List<JumpAction> availableJumps = generateJumpActions(heldStones);
 
-        if (availableJumps.size() > 0) {
+        if (!availableJumps.isEmpty()) {
             allLegalActions.addAll(availableJumps);
         }
         else {
@@ -221,10 +221,22 @@ public class GameState implements Cloneable {
      * @return the updated state
      */
     public GameState updateStateWithAction(Action action) {
+        //TODO: Fix game stage
         latestAction = action;
         setGameStage();
         board.executeAction(action);
         switchPlayer();
+        previousMoveCounter = moveCounter;
+        if(action instanceof JumpAction){
+            moveCounter = 0;
+        }
+        else if(!action.getStone().getKingStatus()){
+            moveCounter = 0;
+        }
+        else{
+            moveCounter = Math.min(DRAW_LIMIT, moveCounter+1);
+        }
+        isDraw = moveCounter == DRAW_LIMIT;
         //currentBoard = board.printBoard();
         return this;
     }
@@ -238,7 +250,8 @@ public class GameState implements Cloneable {
      * @param action the action to be reversed
      */
     public void updateStateWithUndoAction(Action action){
-        moveCounter--;
+        moveCounter = previousMoveCounter;
+        isDraw = moveCounter == DRAW_LIMIT;
         setGameStage();
         board.undoAction(action);
         switchPlayer();
@@ -273,10 +286,10 @@ public class GameState implements Cloneable {
      * @return true if the state is terminal
      */
     public boolean isTerminal() {
-        if (board.getPlayerOneStones().size() == 0 || board.getPlayerTwoStones().size() == 0) {
+        if (board.getPlayerOneStones().isEmpty() || board.getPlayerTwoStones().isEmpty()) {
             return true;
         }
-        else if (generateLegalActions().size() == 0) {
+        else if (generateLegalActions().isEmpty()) {
             return true;
         }
         else if(isDraw){
@@ -313,7 +326,7 @@ public class GameState implements Cloneable {
     }
 
     public boolean isDraw(){
-        return false;
+        return isDraw;
     }
     @Override
     public GameState clone() {

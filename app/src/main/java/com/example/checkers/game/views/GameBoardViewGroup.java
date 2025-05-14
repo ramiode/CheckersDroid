@@ -1,6 +1,7 @@
 package com.example.checkers.game.views;
 
 import android.content.Context;
+import android.view.View;
 import android.view.ViewGroup;
 
 import com.example.checkers.game.models.pieces.Stone;
@@ -72,6 +73,16 @@ public class GameBoardViewGroup extends ViewGroup {
             StoneView stoneView = new StoneView(this.getContext(), color, stone.getPosition());
             stoneView.setId(stone.getId());
             addView(stoneView);
+        }
+    }
+
+    public void resetStones(){
+        int noChildren = getChildCount();
+        for(int i = noChildren-1; i >= 0; i--){
+            View child = getChildAt(i);
+            if(child instanceof StoneView){
+                removeView(child);
+            }
         }
     }
 

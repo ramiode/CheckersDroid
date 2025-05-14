@@ -186,6 +186,7 @@ public class GameActivity extends AppCompatActivity implements Controller {
     private void resetSelection() {
         gameBoardViewGroup.resetSelection();
         previousTile = null;
+        engine.getTurnToPlay().setSelectedStone(null);
     }
 
     /**
@@ -242,20 +243,11 @@ public class GameActivity extends AppCompatActivity implements Controller {
     }
 
     public void resetBoard(){
-        FrameLayout mainLayout = findViewById(R.id.MainLayout);
-        mainLayout.removeView(gameBoardViewGroup);
-        gameBoardViewGroup = new GameBoardViewGroup(this);
-        gameBoardViewGroup.setLayoutParams(new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT));
-        //mainLayout.addView(gameBoardViewGroup);
-        View.OnClickListener listener = new OnBoardClickListener();
-        //Add listener to all TileViews on the board
-        gameBoardViewGroup.initializeBoard(listener);
-        mainLayout.addView(gameBoardViewGroup);
-
-        gameBoardViewGroup.initializeStones(engine.getPlayerOneStones(), AppConstants.RED_STONE);
-        gameBoardViewGroup.initializeStones(engine.getPlayerTwoStones(), AppConstants.WHITE_STONE);
+        runOnUiThread(() -> {
+            gameBoardViewGroup.resetStones();
+            gameBoardViewGroup.initializeStones(engine.getPlayerOneStones(), AppConstants.RED_STONE);
+            gameBoardViewGroup.initializeStones(engine.getPlayerTwoStones(), AppConstants.WHITE_STONE);
+        });
     }
 
     /**
