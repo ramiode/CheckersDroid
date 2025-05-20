@@ -28,6 +28,7 @@ public class GameBoardModel implements Cloneable, Subject {
     private List<Controller> controllers;
     private List<Stone> playerOneStones;
     private List<Stone> playerTwoStones;
+    private boolean isPlayerOneRed;
 
     /**
      * Constructor that initializes an empty board array to be filled later.
@@ -58,6 +59,7 @@ public class GameBoardModel implements Cloneable, Subject {
      * @param isPlayerOneRed true if player one plays as red
      */
     public void initializeStones(boolean isPlayerOneRed) {
+        this.isPlayerOneRed = isPlayerOneRed;
         playerOneStones = initializePieces(isPlayerOneRed);
         playerTwoStones = initializePieces(!isPlayerOneRed);
     }
@@ -130,8 +132,8 @@ public class GameBoardModel implements Cloneable, Subject {
         int newPosition = move.to;
         int oldPosition = move.from;
         Stone stone = move.getStone();
-        boolean isRed = stone.getPlayerColor().equals(AppConstants.PLAYER_RED);
-        List<Stone> stones = isRed ? playerOneStones : playerTwoStones;
+        boolean isPlayerOne = move.getActingPlayer().getName().equals("One");
+        List<Stone> stones = isPlayerOne ? playerOneStones : playerTwoStones;
 
         int targetRow = AppConstants.ROW[newPosition];
         int targetCol = AppConstants.COL[newPosition];
@@ -188,12 +190,12 @@ public class GameBoardModel implements Cloneable, Subject {
      *
      * @param stone the stone to be removed
      */
-    private void removeStone(Stone stone) {
+    private void removeStone(Stone stone, boolean isPlayerOne) {
         board[AppConstants.ROW[stone.getPosition()]][AppConstants.COL[stone.getPosition()]] = null;
-        if (stone.getPlayerColor().equals(AppConstants.PLAYER_RED)) {
-            playerOneStones.removeIf(element -> element.getId() == stone.getId());
-        } else {
+        if (isPlayerOne) {
             playerTwoStones.removeIf(element -> element.getId() == stone.getId());
+        } else {
+            playerOneStones.removeIf(element -> element.getId() == stone.getId());
         }
     }
     public int checkAdjacentFriendlyStones(Stone stone){
@@ -231,7 +233,14 @@ public class GameBoardModel implements Cloneable, Subject {
     private void undoMove(MoveAction move){
         if(move.isKingingMove()){
             move.getStone().undoKing();
+            boolean isPlayerOne = move.getActingPlayer().getName().equals("One");
+            List<Stone> stones = isPlayerOne ? playerOneStones : playerTwoStones;
+            stones.stream()
+                    .filter(element -> element.getId() == move.getStone().getId())
+                    .findFirst()
+                    .ifPresent(Stone::undoKing);
         }
+
         MoveAction undoMove = new MoveAction(move.to, move.from, move.getActingPlayer(), move.getStone());
         executeMove(undoMove);
     }
@@ -241,11 +250,11 @@ public class GameBoardModel implements Cloneable, Subject {
      * @param jump the JumpAction to be reversed
      */
     private void undoJump(JumpAction jump){
-        boolean isRed = jump.getStone().getPlayerColor().equals(AppConstants.PLAYER_RED);
+
         jump.getCapturedStones().forEach(stone -> {
             //not the exact same stone objects
             placeStone(stone, stone.getPosition());
-            boolean b = isRed ? playerTwoStones.add(stone) : playerOneStones.add(stone);
+            boolean b =  jump.getActingPlayer().getName().equals("One") ? playerTwoStones.add(stone) : playerOneStones.add(stone);
         });
         int originPos = jump.getStartingPos();
         Stone playerStone = jump.getStone();
@@ -270,7 +279,7 @@ public class GameBoardModel implements Cloneable, Subject {
         }
 
         for (Stone stone : capturedStones) {
-            removeStone(stone);
+            removeStone(stone, jump.getActingPlayer().getName().equals("One"));
             if (controllers.size() != 0) {
                 controllers.forEach(e -> e.updateRemoveStoneFromUI(stone));
             }

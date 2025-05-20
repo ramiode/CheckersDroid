@@ -10,6 +10,7 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -38,6 +39,7 @@ import java.util.Objects;
  *
  * @author Ramiar Odendaal
  */
+//TODO: Tweak difficulties, implement resource data and logging to file
 public class GameActivity extends AppCompatActivity implements Controller {
     private GameBoardViewGroup gameBoardViewGroup;
     private GameEngine engine;
@@ -55,16 +57,21 @@ public class GameActivity extends AppCompatActivity implements Controller {
             Intent intent = new Intent(GameActivity.this, MainActivity.class);
             startActivity(intent);
         });
-
+        Button resetButton = findViewById(R.id.resetButton);
+        resetButton.setOnClickListener(e -> engine.restartGame());
+        Button pauseButton = findViewById(R.id.pauseButton);
+        pauseButton.setOnClickListener(e -> {
+            engine.pause();
+            pauseButton.setText(pauseButton.getText().equals("Pause") ? "Resume" : "Pause");
+        });
 
         initializeComponents();
 
-        Button resetButton = findViewById(R.id.resetButton);
-        resetButton.setOnClickListener(e -> {
-            recreate();
-        });
+
 
         engine.startGame();
+
+        Toast.makeText(getApplicationContext(), String.format("P1(%s): %s\nP2(%s): %s", engine.getPlayerOneColor(), AppConfig.playerOneModel, engine.getPlayerTwoColor(), AppConfig.playerTwoModel), Toast.LENGTH_LONG).show();
     }
 
 
@@ -94,6 +101,7 @@ public class GameActivity extends AppCompatActivity implements Controller {
         gameBoardViewGroup.initializeStones(engine.getPlayerOneStones(), AppConstants.RED_STONE);
         gameBoardViewGroup.initializeStones(engine.getPlayerTwoStones(), AppConstants.WHITE_STONE);
     }
+
 
     /**
      * Helper method that handles when a user selects a tile with a stone on it.
@@ -245,8 +253,12 @@ public class GameActivity extends AppCompatActivity implements Controller {
     public void resetBoard(){
         runOnUiThread(() -> {
             gameBoardViewGroup.resetStones();
-            gameBoardViewGroup.initializeStones(engine.getPlayerOneStones(), AppConstants.RED_STONE);
-            gameBoardViewGroup.initializeStones(engine.getPlayerTwoStones(), AppConstants.WHITE_STONE);
+            int playerOneColor = engine.getPlayerOneColor().equals(AppConstants.PLAYER_RED) ? AppConstants.RED_STONE : AppConstants.WHITE_STONE;
+            int playerTwoColor = engine.getPlayerTwoColor().equals(AppConstants.PLAYER_RED) ? AppConstants.RED_STONE : AppConstants.WHITE_STONE;
+
+            gameBoardViewGroup.initializeStones(engine.getPlayerOneStones(), playerOneColor);
+            gameBoardViewGroup.initializeStones(engine.getPlayerTwoStones(), playerTwoColor);
+            Toast.makeText(getApplicationContext(), String.format("P1(%s): %s\nP2(%s): %s", engine.getPlayerOneColor(), AppConfig.playerOneModel, engine.getPlayerTwoColor(), AppConfig.playerTwoModel), Toast.LENGTH_LONG).show();
         });
     }
 
@@ -256,6 +268,15 @@ public class GameActivity extends AppCompatActivity implements Controller {
     @Override
     public void updateMoveMade() {
         engine.countDownLatch();
+    }
+
+    @Override
+    public void reportResults(String result) {
+        runOnUiThread(() -> {
+            Intent intent = new Intent(GameActivity.this, ReportActivity.class);
+            intent.putExtra("result", result);
+            startActivity(intent);
+        });
     }
 
     /**

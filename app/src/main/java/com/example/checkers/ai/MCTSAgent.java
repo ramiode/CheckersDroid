@@ -37,11 +37,10 @@ public class MCTSAgent extends Agent{
         clonedState.updateStateWithUndoAction(node.action);
         return node.action;
     }
-    //TODO: Run in separate thread
+
     private GameNode<GameState, Action> monteCarloTreeSearch(GameState state){
         int budget = this.budget;
         GameNode<GameState, Action> root = new GameNode<>(state, null, null, 0);
-        long searchStartTime = System.currentTimeMillis();
         while(budget > 0){
             GameNode<GameState, Action> selectedNode = selectionStep(root);
             GameNode<GameState, Action> expandedNode = expansionStep(selectedNode);
@@ -50,7 +49,7 @@ public class MCTSAgent extends Agent{
             budget--;
         }
         return root.getAllChildNodes().stream()
-                .max(Comparator.comparingDouble(node -> node.getReward()/node.getVisits()))
+                .max(Comparator.comparingDouble(node -> node.getReward()))
                 .get();
     }
 
@@ -101,7 +100,36 @@ public class MCTSAgent extends Agent{
             return node;
         }
     }
+    public Action getBestAction(GameState state, List<Action> unexploredActions, int depth){
+        GameState clonedState = state.clone();
+        Action bestChild = null;
+        if(state.getCurrentPlayer().getName().equals(this.name)){
+            int currentBest = Integer.MIN_VALUE;
+            for(Action a : unexploredActions){
+                clonedState.updateStateWithAction(a);
+                int evaluation = evaluate(clonedState, depth+1);
+                if(evaluation > currentBest){
+                    currentBest = evaluation;
+                    bestChild = a;
+                }
+                clonedState.updateStateWithUndoAction(a);
+            }
+        }
+        else{
+            int currentBest = Integer.MAX_VALUE;
+            for(Action a : unexploredActions){
+                clonedState.updateStateWithAction(a);
+                int evaluation = evaluate(clonedState, depth+1);
+                if(evaluation < currentBest){
+                    currentBest = evaluation;
+                    bestChild = a;
+                }
+                clonedState.updateStateWithUndoAction(a);
+            }
+        }
 
+        return bestChild;
+    }
     /**
      * Simulates a series of moves from the node until a terminal state or a maximum depth is reached.
      * Evaluates the utility of the furthest node reached in the simulation.
@@ -110,22 +138,23 @@ public class MCTSAgent extends Agent{
      */
     private double playoutStep(GameNode<GameState, Action> node) {
         GameNode<GameState, Action> currentNode = node.clone();
-        int depth = 10;
+        int depth = 6;
         while(!currentNode.isTerminal() && depth > 0){
-            Action randomAction = currentNode.getRandomAction();
+            Action randomAction = getBestAction(currentNode.state, currentNode.getUnexploredActions(), currentNode.depth);
             currentNode = currentNode.successor(currentNode.state.updateStateWithAction(randomAction), randomAction);
             depth--;
         }
         double utility = 0;
         if(currentNode.isTerminal()) {
             if (currentNode.state.isDraw()) {
-                utility = 0;
+                utility = 1500;
             } else {
-                utility = currentNode.state.getWinner().getName().equals(this.name) ? 1 : -1;
+                utility = currentNode.state.getWinner().getName().equals(this.name) ? 3000 : -3000;
             }
         }
         else{
-            utility = evaluate(currentNode.state, currentNode.depth) > 100 ? 1 : -1;
+            double evaluation = evaluate(currentNode.state, currentNode.depth);
+            utility = evaluation;
         }
         return utility;
     }

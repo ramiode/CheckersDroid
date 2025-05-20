@@ -25,6 +25,7 @@ public class SettingsActivity extends AppCompatActivity {
             startActivity(intent);
         });
         Button playerTwoButton = findViewById(R.id.playerTwoSetting);
+        playerTwoButton.setText(AppConfig.playerTwoModel);
         playerTwoButton.setOnClickListener(e -> {
             String currentText = playerTwoButton.getText().toString();
             switch(currentText){
@@ -35,6 +36,9 @@ public class SettingsActivity extends AppCompatActivity {
                     currentText = AppConfig.HUMAN;
                     break;
                 case AppConfig.HUMAN:
+                    currentText = AppConfig.RANDOM;
+                    break;
+                case AppConfig.RANDOM:
                     currentText = AppConfig.MINIMAX;
                     break;
             }
@@ -42,6 +46,7 @@ public class SettingsActivity extends AppCompatActivity {
             playerTwoButton.setText(currentText);
         });
         Button playerOneButton = findViewById(R.id.playerOneSetting);
+        playerOneButton.setText(AppConfig.playerOneModel);
         playerOneButton.setOnClickListener(e -> {
             String currentText = playerOneButton.getText().toString();
             switch(currentText){
@@ -52,6 +57,9 @@ public class SettingsActivity extends AppCompatActivity {
                     currentText = AppConfig.HUMAN;
                     break;
                 case AppConfig.HUMAN:
+                    currentText = AppConfig.RANDOM;
+                    break;
+                case AppConfig.RANDOM:
                     currentText = AppConfig.MINIMAX;
                     break;
             }
@@ -60,6 +68,7 @@ public class SettingsActivity extends AppCompatActivity {
         });
 
         Button difficultyButton = findViewById(R.id.difficultySetting);
+        difficultyButton.setText(AppConfig.difficulty);
         difficultyButton.setOnClickListener(e -> {
             String currentText = difficultyButton.getText().toString();
             switch(currentText){

@@ -52,7 +52,7 @@ public class GameState implements Cloneable {
      * @return a list of all legal actions that can be made
      */
     public List<Action> generateLegalActions() {
-        List<Stone> heldStones = currentPlayer.equals(playerOne) ? board.getPlayerOneStones() : board.getPlayerTwoStones();
+        List<Stone> heldStones = currentPlayer.getName().equals(playerOne.getName()) ? board.getPlayerOneStones() : board.getPlayerTwoStones();
         List<Action> allLegalActions = new ArrayList<>();
 
         List<JumpAction> availableJumps = generateJumpActions(heldStones);
@@ -221,7 +221,7 @@ public class GameState implements Cloneable {
      * @return the updated state
      */
     public GameState updateStateWithAction(Action action) {
-        //TODO: Fix game stage
+
         latestAction = action;
         setGameStage();
         board.executeAction(action);
@@ -296,24 +296,6 @@ public class GameState implements Cloneable {
             return true;
         }
         return false;
-    }
-
-    /**
-     * Get the name of this state's player one.
-     *
-     * @return the name of player one
-     */
-    public String getPlayerOneName(){
-        return playerOne.getName();
-    }
-
-    /**
-     * Get the name of this state's player one.
-     *
-     * @return the name of player two
-     */
-    public String getPlayerTwoName(){
-        return playerTwo.getName();
     }
 
     /**

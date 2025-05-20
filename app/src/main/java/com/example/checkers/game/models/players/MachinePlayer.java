@@ -24,15 +24,19 @@ public class MachinePlayer extends Player {
      *
      * @param isRed     true if player is red, false otherwise
      * @param name      the name of the player
-     * @param isMinimax true if player should use minimax model, false otherwise
      */
-    public MachinePlayer(boolean isRed, String name, boolean isMinimax) {
+    public MachinePlayer(boolean isRed, String name) {
         super(isRed, name);
-        if(true) {
-            aiModel = isMinimax ? new MinimaxAgent(name, AppConfig.timeSlice, AppConfig.minimax_depth, isRed) : new MCTSAgent(name, AppConfig.timeSlice, AppConfig.mcts_budget, isRed);
-        }
-        else{
-            aiModel = new RandomAgent(name, 10, isRed);
+        String model = isRed ? AppConfig.playerOneModel : AppConfig.playerTwoModel;
+        switch(model){
+            case AppConfig.RANDOM:
+                aiModel = new RandomAgent(name, AppConfig.timeSlice, isRed);
+                break;
+            case AppConfig.MCTS:
+                aiModel = new MCTSAgent(name, AppConfig.timeSlice, AppConfig.mcts_budget, isRed);
+                break;
+            default:
+                aiModel = new MinimaxAgent(name, AppConfig.timeSlice, AppConfig.minimax_depth, isRed);
         }
     }
 

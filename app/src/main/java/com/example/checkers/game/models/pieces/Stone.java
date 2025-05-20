@@ -72,6 +72,7 @@ public class Stone implements Cloneable {
      */
     public void undoKing(){
         isKing = false;
+        directions = this.player.equals(AppConstants.PLAYER_RED) ? AppConstants.RED_DIRECTIONS : AppConstants.WHITE_DIRECTIONS;
     }
 
     /**

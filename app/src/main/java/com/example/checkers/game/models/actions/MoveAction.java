@@ -27,8 +27,7 @@ public class MoveAction extends Action {
         this.from = from;
         this.to = to;
         int[] opponentRow = player.getColor().equals(AppConstants.PLAYER_RED) ? AppConstants.WHITE_ROW : AppConstants.RED_ROW;
-        boolean movingToOpponentRow = to >= opponentRow[0] && to <= opponentRow[1];
-        this.isKingingMove = stone.getKingStatus() ? false : movingToOpponentRow;
+        this.isKingingMove = to >= opponentRow[0] && to <= opponentRow[1];
     }
 
     /**

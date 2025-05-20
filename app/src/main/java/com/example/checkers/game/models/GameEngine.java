@@ -15,7 +15,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-public class GameEngine implements Subject {
+public class GameEngine implements Subject, ResourceMonitor.ResourceMonitorListener {
     //player one is red
     private final Player playerOne;
     //player two is white
@@ -26,7 +26,9 @@ public class GameEngine implements Subject {
     private volatile boolean isRunning;
     private GameState currentState;
     private Thread gameThread;
-    private int counter = 100;
+    private volatile boolean isPaused;
+    private int counter = 5;
+    private boolean isPlayerOneRed;
     private final List<Controller> controllers;
 
     /**
@@ -35,23 +37,35 @@ public class GameEngine implements Subject {
      * @param controller the controller for this model
      */
     public GameEngine(Controller controller) {
-        this.playerOne = AppConfig.isPlayerOneHuman ? new HumanPlayer(true, "One") : new MachinePlayer(true, "One", AppConfig.playerOneModel.equals(AppConfig.MINIMAX));
-        this.playerTwo = AppConfig.isPlayerTwoHuman ? new HumanPlayer(false, "Two") : new MachinePlayer(false, "Two", AppConfig.playerTwoModel.equals(AppConfig.MINIMAX));
+        this.playerOne = AppConfig.isPlayerOneHuman ? new HumanPlayer(true, "One") : new MachinePlayer(true, "One");
+        this.playerTwo = AppConfig.isPlayerTwoHuman ? new HumanPlayer(false, "Two") : new MachinePlayer(false, "Two");
         playerOne.addController(controller);
         playerTwo.addController(controller);
         GameBoardModel model = new GameBoardModel();
-        model.initializeStones(true);
+        isPlayerOneRed = true;
+        model.initializeStones(isPlayerOneRed);
         this.currentState = new GameState(model, playerOne, playerTwo, playerOne);
         controllers = new LinkedList<>();
-        gameLogger = new DataLogger();
+        gameLogger = new DataLogger(AppConfig.playerOneModel, AppConfig.playerTwoModel);
+        //gameLogger.initializeWriterForTest(String.format("%svs%s%s.txt", AppConfig.playerOneModel, AppConfig.playerTwoModel, AppConfig.difficulty));
     }
 
+    public String getPlayerOneColor(){
+        return playerOne.getColor();
+    }
+    public String getPlayerTwoColor(){
+        return playerTwo.getColor();
+    }
     public void restartGame(){
         GameBoardModel model = new GameBoardModel();
-        model.initializeStones(true);
-        this.currentState = new GameState(model, playerOne, playerTwo, playerOne);
+        isPlayerOneRed = !isPlayerOneRed;
+        model.initializeStones(isPlayerOneRed);
+        playerOne.switchColor();
+        playerTwo.switchColor();
+        this.currentState = new GameState(model, playerOne, playerTwo, isPlayerOneRed ? playerOne : playerTwo);
         controllers.get(0).resetBoard();
         this.currentState.getBoard().addController(controllers.get(0));
+        gameLogger.printSystemText("Starting new game...\n", controllers.get(0));
         //startGame();
     }
     /**
@@ -64,47 +78,66 @@ public class GameEngine implements Subject {
 
         Runnable gameLoop = () -> {
             while (isRunning) {
-                latch = new CountDownLatch(1);
-                try {
-                    if (currentState.isTerminal()) {
-                        if(currentState.isDraw()){
-                            gameLogger.printSystemText("Game ends in draw after no captures and no stone movement for 40 turns.\n", controllers.get(0));
+                if (!isPaused) {
+                    double startTime = 0;
+                    double endTime = 0;
+                    latch = new CountDownLatch(1);
+                    try {
+                        if (currentState.isTerminal()) {
+                            if (currentState.isDraw()) {
+                                gameLogger.printSystemText("Game ends in draw after no captures and no stone movement for 40 turns.\n", controllers.get(0));
+                            } else {
+                                gameLogger.printSystemText(String.format("Game over: %s wins.\n", currentState.getWinner().getName()), controllers.get(0));
+                            }
+                            if(counter > 0) {
+                                //Thread.sleep(1000);
+                                gameLogger.printSystemText("Restarting game...", controllers.get(0));
+                                //Thread.sleep(1000);
+                                gameLogger.logMatchResult(0, 0, 0, currentState.getWinner().getName().equals(playerOne.getName()), true);
+                                gameLogger.logMatchResult(0, 0, 0, currentState.getWinner().getName().equals(playerTwo.getName()), false);
+                                restartGame();
+                                counter--;
+                            }
+                            else{
+                                gameLogger.logMatchResult(0, 0, 0, currentState.getWinner().getName().equals(playerOne.getName()), true);
+                                gameLogger.logMatchResult(0, 0, 0, currentState.getWinner().getName().equals(playerTwo.getName()), false);
+                                String resultPlayerOne = String.format("Average time for Player 1 with model %s: %f\n" +
+                                                                 "Number of wins: %d\n\n", AppConfig.playerOneModel, gameLogger.getAverageTimeForPlayerOne(), gameLogger.getPlayerOneWinCount());
+                                String resultPlayerTwo = String.format("Average time for Player 2 with model %s: %f\n" +
+                                        "Number of wins: %d\n", AppConfig.playerTwoModel, gameLogger.getAverageTimeForPlayerTwo(), gameLogger.getPlayerTwoWinCount());
+                                controllers.get(0).reportResults(resultPlayerOne + resultPlayerTwo);
+                                break;
+
+                            }
                         }
-                        else {
-                            gameLogger.printSystemText(String.format("Game over: %s wins.\n", currentState.getWinner().getName()), controllers.get(0));
+
+                        turnToPlay = currentState.getCurrentPlayer();
+                        gameLogger.printSystemText(String.format("Waiting for player %s...\n", turnToPlay.getName()), controllers.get(0));
+                        if (!turnToPlay.isHuman()) {
+                            MachinePlayer player = (MachinePlayer) turnToPlay;
+                            startTime = System.nanoTime();
+                            player.generateAction(currentState);
                         }
-                        //Could log the match results here
-                        Thread.sleep(1000);
-                        gameLogger.printSystemText("Restarting game...", controllers.get(0));
-                        Thread.sleep(1000);
-                        restartGame();
-                        //break;
+                        latch.await();
+                    }
+                    catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                    Action nextMove = turnToPlay.getNextMove();
+                    endTime = (System.nanoTime() - startTime)/1_000_000;
+
+                    gameLogger.addMoveTime(turnToPlay, endTime);
+                    currentState.updateStateWithAction(nextMove);
+                    gameLogger.printAction(nextMove, controllers.get(0));
+
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
 
-                    turnToPlay = currentState.getCurrentPlayer();
-                    gameLogger.printSystemText(String.format("Waiting for player %s...\n", turnToPlay.getName()), controllers.get(0));
-
-                    if (!turnToPlay.isHuman()) {
-                        MachinePlayer player = (MachinePlayer) turnToPlay;
-                        player.generateAction(currentState);
-                    }
-                    latch.await();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
                 }
-
-                Action nextMove = turnToPlay.getNextMove();
-
-                currentState.updateStateWithAction(nextMove);
-                gameLogger.printAction(nextMove, controllers.get(0));
-
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
             }
         };
 
@@ -118,6 +151,16 @@ public class GameEngine implements Subject {
     public void terminate() {
         countDownLatch();
         this.isRunning = false;
+    }
+
+    public void pause(){
+        //Use semaphore/lock instead?
+        if(!isPaused){
+            isPaused = true;
+        }
+        else{
+            isPaused = false;
+        }
     }
 
     /**
@@ -196,5 +239,10 @@ public class GameEngine implements Subject {
     private void printBoard() {
         GameBoardModel board = currentState.getBoard();
         board.printBoard();
+    }
+
+    @Override
+    public void onAveragesReady(float avgCpuUsage, long avgRamUsageKB, int avgBatteryLevel) {
+
     }
 }

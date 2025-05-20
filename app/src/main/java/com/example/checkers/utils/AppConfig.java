@@ -9,11 +9,15 @@ public class AppConfig {
     private static final int HARD_DIFFICULTY = 1000;
     private static final int VERY_HARD_DIFFICULTY=  5000;
     public static final String EASY = "Easy";
+    public static boolean isSimulation = false;
     public static final String MEDIUM = "Medium";
     public static final String HARD = "Hard";
     public static final String VERY_HARD = "Very hard";
+    public static String difficulty = EASY;
+
     public static final String MINIMAX = "Minimax";
     public static final String MCTS = "MCTS";
+    public static final String RANDOM = "Random";
     public static final String HUMAN = "Human";
     public static boolean isPlayerOneHuman;
     public static boolean isPlayerTwoHuman;
@@ -38,18 +42,22 @@ public class AppConfig {
             case EASY:
                 minimax_depth = 3;
                 mcts_budget = 500;
+                difficulty = EASY;
                 break;
             case MEDIUM:
                 minimax_depth = 5;
                 mcts_budget = 2000;
+                difficulty = MEDIUM;
                 break;
             case HARD:
-                minimax_depth = 7;
-                mcts_budget = 4000;
+                minimax_depth = 6;
+                mcts_budget = 3000;
+                difficulty = HARD;
                 break;
             case VERY_HARD:
                 minimax_depth = 8;
-                mcts_budget = 8000;
+                mcts_budget = 6000;
+                difficulty = VERY_HARD;
                 break;
         }
     }

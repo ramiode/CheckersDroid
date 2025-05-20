@@ -16,7 +16,7 @@ import java.util.List;
  */
 public abstract class Player implements AgentSubject {
     private final String name;
-    private final String color;
+    private String color;
     protected List<Controller> controllers;
     private volatile Action selectedAction;
     protected volatile Stone currentlySelectedStone;
@@ -30,6 +30,10 @@ public abstract class Player implements AgentSubject {
         this.color = isRed ? AppConstants.PLAYER_RED : AppConstants.PLAYER_WHITE;
         this.name = name;
         controllers = new LinkedList<>();
+    }
+
+    public void switchColor(){
+        this.color = this.color.equals(AppConstants.PLAYER_RED) ? AppConstants.PLAYER_WHITE : AppConstants.PLAYER_RED;
     }
 
     /**

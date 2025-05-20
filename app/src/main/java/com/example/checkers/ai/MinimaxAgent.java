@@ -30,13 +30,21 @@ public class MinimaxAgent extends Agent{
      */
     @Override
     public Action getNextMove(GameState state) {
+        /*
+        Late game moves are fast since there are fewer options
+        Could add random depth limits and multiply by game stage
+        Agent should press the advantage if there is a big material difference.
+        Otherwise, repeating moves until a draw can be considered the most optimal path.
+        Check average move time for each difficulty level.
+        Adjust so that they correspond to 100 ms, 500 ms, and 1000 ms.
+         */
         GameState clonedState = state.clone();
         List<Action> actions = clonedState.generateLegalActions();
 
         if(actions.size() == 1){
             return actions.get(0);
         }
-        Action generatedAction = alphaBetaSearch(clonedState, depthLimit);
+        Action generatedAction = alphaBetaSearch(clonedState, depthLimit + (state.gameStage == 3 ? 1 : 0));
         if(generatedAction == null){
             return actions.get(r.nextInt(actions.size()));
         }

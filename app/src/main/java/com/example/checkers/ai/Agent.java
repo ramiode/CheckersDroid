@@ -103,9 +103,8 @@ public abstract class Agent {
         estimatedUtility += triangleWeight * triangleFormationEvaluation;
         estimatedUtility += movementWeight * (myMovementEvaluation); //30
         estimatedUtility += kingWeight * (countKings(myStones) - countKings(enemyStones));
-        estimatedUtility += noMyStones;
 
-        return estimatedUtility + (estimatedUtility % 2 == 0 ? random : -random);
+        return estimatedUtility;
     }
     private int evaluatePosition(int position, boolean isPlayerOne){
         return isPlayerOne ? RED_POSITIONAL_SCORES[position] : WHITE_POSITIONAL_SCORES[position];

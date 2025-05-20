@@ -85,6 +85,10 @@ public class GameNode<S,A>{
         return unexploredActions.get(random.nextInt(unexploredActions.size()));
     }
 
+    public List<Action> getUnexploredActions(){
+        return unexploredActions;
+    }
+
     /**
      * Gets the current reward (potential) of this node.
      * @return the reward

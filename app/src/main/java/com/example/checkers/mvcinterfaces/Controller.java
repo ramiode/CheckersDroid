@@ -36,4 +36,6 @@ public interface Controller {
      * Used by agents to notify the controller so it can unblock the GameEngine when a move has been selected.
      */
     void updateMoveMade();
+
+    void reportResults(String result);
 }
