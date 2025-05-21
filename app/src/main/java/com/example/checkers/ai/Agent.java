@@ -50,7 +50,6 @@ public abstract class Agent {
     public Agent(String name, int timeSlice, boolean isAgentPlayerOne){
         this.name = name;
         this.timeSlice = timeSlice;
-        executor = Executors.newSingleThreadExecutor();
         this.isAgentPlayerOne = isAgentPlayerOne;
     }
     /**

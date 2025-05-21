@@ -5,9 +5,12 @@ import com.example.checkers.game.GameState;
 import com.example.checkers.game.models.actions.Action;
 
 import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -27,26 +30,41 @@ public class MCTSAgent extends Agent{
      */
     @Override
     public Action getNextMove(GameState state) {
+
         GameState clonedState = state.clone();
         List<Action> availableActions = clonedState.generateLegalActions();
         if(availableActions.size() == 1){
             return availableActions.get(0);
         }
+        long startTime, endTime;
+        startTime = System.nanoTime();
         GameNode<GameState, Action> node = monteCarloTreeSearch(clonedState);
         //If not undone stone will remain in its updated position -- bad design
         clonedState.updateStateWithUndoAction(node.action);
+        endTime = (System.nanoTime() - startTime)/1_000_000;
+        node.action.setTimeTaken(endTime);
         return node.action;
     }
 
     private GameNode<GameState, Action> monteCarloTreeSearch(GameState state){
-        int budget = this.budget;
+        AtomicInteger budget = new AtomicInteger(this.budget);
+
         GameNode<GameState, Action> root = new GameNode<>(state, null, null, 0);
-        while(budget > 0){
+        Thread t = new Thread(() -> {
+            try {
+                Thread.sleep(timeSlice);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            budget.set(0);
+        });
+        t.start();
+        while(budget.get() > 0){
             GameNode<GameState, Action> selectedNode = selectionStep(root);
             GameNode<GameState, Action> expandedNode = expansionStep(selectedNode);
             double estimatedUtility = playoutStep(expandedNode);
             backPropagationStep(expandedNode, estimatedUtility);
-            budget--;
+            budget.getAndDecrement();
         }
         return root.getAllChildNodes().stream()
                 .max(Comparator.comparingDouble(node -> node.getReward()))

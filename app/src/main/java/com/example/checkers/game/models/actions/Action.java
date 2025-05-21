@@ -11,6 +11,7 @@ import com.example.checkers.game.models.players.Player;
 public abstract class Action{
     private final Player actingPlayer;
     private final Stone currentStone;
+    public long timeTaken;
 
     /**
      * Constructor which takes the player who is performing the action and the selected stone.
@@ -57,4 +58,8 @@ public abstract class Action{
      * @return a string representing the action
      */
     public abstract String getActionMessage();
+
+    public void setTimeTaken(long time){
+        timeTaken = time;
+    }
 }

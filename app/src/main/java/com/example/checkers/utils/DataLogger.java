@@ -1,14 +1,15 @@
 package com.example.checkers.utils;
 
+import android.content.Context;
 import android.graphics.Color;
 
+import com.example.checkers.game.models.ResourceMonitor;
 import com.example.checkers.game.models.actions.Action;
 import com.example.checkers.game.models.players.Player;
 import com.example.checkers.mvcinterfaces.Controller;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileOutputStream;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Locale;
@@ -29,15 +30,22 @@ public class DataLogger {
     private double averageTimePlayerTwo;
     private int playerOneMoveCount;
     private int playerTwoMoveCount;
+    private float playerOneCpu;
+    private long playerOneRam;
+    private int playerOneBattery;
+    private float playerTwoCpu;
+    private long playerTwoRam;
+    private int playerTwoBattery;
 
     public DataLogger(String playerOneModel, String playerTwoModel){
         this.playerOneModel = playerOneModel;
         this.playerTwoModel = playerTwoModel;
     }
 
-    public void initializeWriterForTest(String testName){
+    public void initializeWriterForTest(String testName, Context context){
         try {
-            bw = new BufferedWriter(new FileWriter(testName));
+            File file = new File(context.getFilesDir(), testName);
+            bw = new BufferedWriter(new FileWriter(file));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -84,32 +92,27 @@ public class DataLogger {
         }
     }
 
-    public void logMatchResult(int cpuPercentage, int batteryPercentage, int ramPercentage, boolean isWin, boolean isPlayerOne){
-        /*
+    public void logMatchResult(boolean isWin, boolean isPlayerOne){
+
         try {
             if(isPlayerOne){
-
-                bw.write(String.format(Locale.ENGLISH,"%s,%s,%d,%d,%d,%d,%f", playerOneModel, win, cpuPercentage,
-                        batteryPercentage, ramPercentage, playerOneMoveCount, getAverageTimeForPlayerOne())); //also get vitals data
+                bw.write(String.format(Locale.ENGLISH,"%s,%s,%f,%d,%d,%d,%f", playerOneModel, isWin ? "Win" : "Loss", playerOneCpu/playerOneMoveCount,
+                        playerOneBattery/playerOneMoveCount, playerOneRam/playerOneMoveCount, playerOneMoveCount, getAverageTimeForPlayerOne())); //also get vitals data
                 bw.newLine();
-                playerOneWinCount++;
+                if(isWin){
+                    playerOneWinCount++;
+                }
             }
             else{
-                bw.write(String.format(Locale.ENGLISH,"%s,%s,%d,%d,%d,%d,%f", playerTwoModel, win, cpuPercentage,
-                        batteryPercentage, ramPercentage, playerTwoMoveCount, getAverageTimeForPlayerTwo())); //also get vitals data
+                bw.write(String.format(Locale.ENGLISH,"%s,%s,%f,%d,%d,%d,%f", playerTwoModel, isWin ? "Win" : "Loss", playerTwoCpu/playerOneMoveCount,
+                        playerTwoBattery/playerTwoMoveCount, playerTwoRam/playerTwoMoveCount, playerTwoMoveCount, getAverageTimeForPlayerTwo())); //also get vitals data
                 bw.newLine();
-                playerTwoWinCount++;
+                if(isWin){
+                    playerTwoWinCount++;
+                }
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
-
-         */
-        if(isPlayerOne && isWin){
-            playerOneWinCount++;
-        }
-        else if(!isPlayerOne && isWin){
-            playerTwoWinCount++;
         }
     }
 
@@ -120,14 +123,20 @@ public class DataLogger {
         return playerTwoWinCount;
     }
 
-    public void addMoveTime(Player player, double time){
-        if(player.getColor().equals(AppConstants.PLAYER_RED)){
+    public void addMoveData(Player player, double time, ResourceMonitor.Result res){
+        if(player.getName().equals("One")){
             averageTimePlayerOne += time;
             playerOneMoveCount++;
+            playerOneCpu += (float) res.avgCpu;
+            playerOneBattery += res.avgBattery;
+            playerOneRam += res.avgRam;
         }
         else{
             averageTimePlayerTwo += time;
             playerTwoMoveCount++;
+            playerTwoCpu += (float) res.avgCpu;
+            playerTwoBattery += res.avgBattery;
+            playerTwoRam += res.avgRam;
         }
     }
 
@@ -137,6 +146,7 @@ public class DataLogger {
     public double getAverageTimeForPlayerOne(){
         return (double) averageTimePlayerOne/playerOneMoveCount;
     }
+
     public int getPlayerOneMoveCount(){
         return playerOneMoveCount;
     }
@@ -149,6 +159,12 @@ public class DataLogger {
         averageTimePlayerOne = 0;
         playerOneMoveCount = 0;
         playerTwoMoveCount = 0;
+        playerOneCpu = 0;
+        playerOneRam = 0;
+        playerOneBattery = 0;
+        playerTwoCpu = 0;
+        playerTwoRam = 0;
+        playerTwoBattery = 0;
     }
 
 

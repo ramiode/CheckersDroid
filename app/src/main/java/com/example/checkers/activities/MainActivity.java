@@ -1,4 +1,4 @@
-package activities;
+package com.example.checkers.activities;
 
 import android.content.Intent;
 import android.os.Bundle;

@@ -1,4 +1,4 @@
-package activities;
+package com.example.checkers.activities;
 
 import static android.view.View.GONE;
 
@@ -21,8 +21,6 @@ import com.example.checkers.game.models.actions.Action;
 import com.example.checkers.game.models.actions.JumpAction;
 import com.example.checkers.game.models.actions.MoveAction;
 import com.example.checkers.game.models.pieces.Stone;
-import com.example.checkers.game.models.players.HumanPlayer;
-import com.example.checkers.game.models.players.MachinePlayer;
 import com.example.checkers.game.models.players.Player;
 import com.example.checkers.game.views.GameBoardViewGroup;
 import com.example.checkers.game.views.StoneView;
@@ -94,7 +92,7 @@ public class GameActivity extends AppCompatActivity implements Controller {
         logText = findViewById(R.id.textView2);
         logText.setText("");
 
-        engine = new GameEngine(this);
+        engine = new GameEngine(this, this.getApplicationContext());
         engine.addController(this);
 
         //Add StoneViews to the board

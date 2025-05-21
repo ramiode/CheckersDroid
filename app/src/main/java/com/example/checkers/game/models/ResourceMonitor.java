@@ -1,24 +1,20 @@
+package com.example.checkers.game.models;
+
 import android.app.ActivityManager;
 import android.content.Context;
 import android.os.BatteryManager;
-import android.os.Build;
-import android.os.Debug;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ResourceMonitor {
-
-    public interface ResourceMonitorListener {
-        void onAveragesReady(float avgCpuUsage, long avgRamUsageKB, int avgBatteryLevel);
-    }
-
     private final Context context;
-    private final ResourceMonitorListener listener;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final int intervalMs = 50;
 
@@ -28,9 +24,8 @@ public class ResourceMonitor {
 
     private boolean isMonitoring = false;
 
-    public ResourceMonitor(Context context, ResourceMonitorListener listener) {
+    public ResourceMonitor(Context context) {
         this.context = context.getApplicationContext();
-        this.listener = listener;
     }
 
     public void startMonitoring() {
@@ -39,7 +34,7 @@ public class ResourceMonitor {
         handler.post(pollRunnable);
     }
 
-    public void stopMonitoring() {
+    public Result stopMonitoring() {
         isMonitoring = false;
         handler.removeCallbacks(pollRunnable);
 
@@ -47,13 +42,11 @@ public class ResourceMonitor {
         long avgRam = averageLong(ramUsages);
         int avgBattery = averageInt(batteryLevels);
 
-        if (listener != null) {
-            listener.onAveragesReady(avgCpu * 100, avgRam, avgBattery);
-        }
-
         cpuUsages.clear();
         ramUsages.clear();
         batteryLevels.clear();
+
+        return new Result(avgCpu, avgRam, avgBattery);
     }
 
     private final Runnable pollRunnable = new Runnable() {
@@ -69,38 +62,38 @@ public class ResourceMonitor {
         }
     };
 
-    private float readCpuUsage() {
-        try {
-            RandomAccessFile reader = new RandomAccessFile("/proc/stat", "r");
-            String load = reader.readLine();
-            String[] toks = load.split(" +");
-            long idle1 = Long.parseLong(toks[4]);
-            long cpu1 = 0;
-            for (int i = 1; i < 8; i++) cpu1 += Long.parseLong(toks[i]);
+    public float readCpuUsage() {
+            int rate = 0;
+            try {
+                String Result;
+                Process p = Runtime.getRuntime().exec("top -n 1");
+                BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                while ((Result = br.readLine()) !=null){
+                    if (Result.contains("com.example.ch+")) {
+                        String[] info = Result.trim().replaceAll(" +"," ").split(" ");
+                        if(info[8].matches("[0-9.]+")){
+                            return Float.parseFloat(info[8]);
+                        }
+                        else{
+                            return Float.parseFloat(info[9]);
+                        }
+                    }
+                }
 
-            try { Thread.sleep(200); } catch (Exception ignored) {}
-
-            reader.seek(0);
-            load = reader.readLine();
-            reader.close();
-            toks = load.split(" +");
-            long idle2 = Long.parseLong(toks[4]);
-            long cpu2 = 0;
-            for (int i = 1; i < 8; i++) cpu2 += Long.parseLong(toks[i]);
-
-            return (float) (cpu2 - cpu1) / ((cpu2 + idle2) - (cpu1 + idle1));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return 0;
-        }
+            } catch (IOException | NumberFormatException e) {
+                e.printStackTrace();
+            }
+            return rate;
     }
+
+
 
     private long readRamUsage() {
         ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
         activityManager.getMemoryInfo(memoryInfo);
         long used = memoryInfo.totalMem - memoryInfo.availMem;
-        return used / 1024; // in KB
+        return used/(1024*1024); // in MB
     }
 
     private int readBatteryLevel() {
@@ -127,5 +120,17 @@ public class ResourceMonitor {
         int sum = 0;
         for (Integer i : list) sum += i;
         return sum / list.size();
+    }
+
+    public class Result{
+        public final double avgCpu;
+        public final long avgRam;
+        public final int avgBattery;
+
+        public Result(float cpu, long ram, int battery){
+            avgCpu = cpu;
+            avgRam = ram;
+            avgBattery = battery;
+        }
     }
 }

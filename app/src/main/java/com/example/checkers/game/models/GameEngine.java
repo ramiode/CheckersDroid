@@ -1,5 +1,7 @@
 package com.example.checkers.game.models;
 
+import android.content.Context;
+
 import com.example.checkers.game.GameState;
 import com.example.checkers.game.models.actions.Action;
 import com.example.checkers.game.models.pieces.Stone;
@@ -15,7 +17,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-public class GameEngine implements Subject, ResourceMonitor.ResourceMonitorListener {
+public class GameEngine implements Subject {
     //player one is red
     private final Player playerOne;
     //player two is white
@@ -26,8 +28,9 @@ public class GameEngine implements Subject, ResourceMonitor.ResourceMonitorListe
     private volatile boolean isRunning;
     private GameState currentState;
     private Thread gameThread;
+    private ResourceMonitor rm;
     private volatile boolean isPaused;
-    private int counter = 5;
+    private int counter = 2;
     private boolean isPlayerOneRed;
     private final List<Controller> controllers;
 
@@ -36,7 +39,7 @@ public class GameEngine implements Subject, ResourceMonitor.ResourceMonitorListe
      *
      * @param controller the controller for this model
      */
-    public GameEngine(Controller controller) {
+    public GameEngine(Controller controller, Context context) {
         this.playerOne = AppConfig.isPlayerOneHuman ? new HumanPlayer(true, "One") : new MachinePlayer(true, "One");
         this.playerTwo = AppConfig.isPlayerTwoHuman ? new HumanPlayer(false, "Two") : new MachinePlayer(false, "Two");
         playerOne.addController(controller);
@@ -47,7 +50,8 @@ public class GameEngine implements Subject, ResourceMonitor.ResourceMonitorListe
         this.currentState = new GameState(model, playerOne, playerTwo, playerOne);
         controllers = new LinkedList<>();
         gameLogger = new DataLogger(AppConfig.playerOneModel, AppConfig.playerTwoModel);
-        //gameLogger.initializeWriterForTest(String.format("%svs%s%s.txt", AppConfig.playerOneModel, AppConfig.playerTwoModel, AppConfig.difficulty));
+        rm = new ResourceMonitor(context);
+        gameLogger.initializeWriterForTest(String.format("%svs%s%s.txt", AppConfig.playerOneModel, AppConfig.playerTwoModel, AppConfig.difficulty), context);
     }
 
     public String getPlayerOneColor(){
@@ -66,7 +70,7 @@ public class GameEngine implements Subject, ResourceMonitor.ResourceMonitorListe
         controllers.get(0).resetBoard();
         this.currentState.getBoard().addController(controllers.get(0));
         gameLogger.printSystemText("Starting new game...\n", controllers.get(0));
-        //startGame();
+        gameLogger.reset();
     }
     /**
      * Starts the game in a separate thread. Waits for the current player to make a move, executes it, notifies the controller, then switches to the other player in a loop.
@@ -79,8 +83,7 @@ public class GameEngine implements Subject, ResourceMonitor.ResourceMonitorListe
         Runnable gameLoop = () -> {
             while (isRunning) {
                 if (!isPaused) {
-                    double startTime = 0;
-                    double endTime = 0;
+
                     latch = new CountDownLatch(1);
                     try {
                         if (currentState.isTerminal()) {
@@ -93,19 +96,21 @@ public class GameEngine implements Subject, ResourceMonitor.ResourceMonitorListe
                                 //Thread.sleep(1000);
                                 gameLogger.printSystemText("Restarting game...", controllers.get(0));
                                 //Thread.sleep(1000);
-                                gameLogger.logMatchResult(0, 0, 0, currentState.getWinner().getName().equals(playerOne.getName()), true);
-                                gameLogger.logMatchResult(0, 0, 0, currentState.getWinner().getName().equals(playerTwo.getName()), false);
+                                gameLogger.logMatchResult(currentState.getWinner().getName().equals(playerOne.getName()), true);
+                                gameLogger.logMatchResult(currentState.getWinner().getName().equals(playerTwo.getName()), false);
+                                gameLogger.reset();
                                 restartGame();
                                 counter--;
                             }
                             else{
-                                gameLogger.logMatchResult(0, 0, 0, currentState.getWinner().getName().equals(playerOne.getName()), true);
-                                gameLogger.logMatchResult(0, 0, 0, currentState.getWinner().getName().equals(playerTwo.getName()), false);
+                                gameLogger.logMatchResult(currentState.getWinner().getName().equals(playerOne.getName()), true);
+                                gameLogger.logMatchResult(currentState.getWinner().getName().equals(playerTwo.getName()), false);
                                 String resultPlayerOne = String.format("Average time for Player 1 with model %s: %f\n" +
                                                                  "Number of wins: %d\n\n", AppConfig.playerOneModel, gameLogger.getAverageTimeForPlayerOne(), gameLogger.getPlayerOneWinCount());
                                 String resultPlayerTwo = String.format("Average time for Player 2 with model %s: %f\n" +
                                         "Number of wins: %d\n", AppConfig.playerTwoModel, gameLogger.getAverageTimeForPlayerTwo(), gameLogger.getPlayerTwoWinCount());
                                 controllers.get(0).reportResults(resultPlayerOne + resultPlayerTwo);
+                                gameLogger.saveTestFileData();
                                 break;
 
                             }
@@ -115,7 +120,7 @@ public class GameEngine implements Subject, ResourceMonitor.ResourceMonitorListe
                         gameLogger.printSystemText(String.format("Waiting for player %s...\n", turnToPlay.getName()), controllers.get(0));
                         if (!turnToPlay.isHuman()) {
                             MachinePlayer player = (MachinePlayer) turnToPlay;
-                            startTime = System.nanoTime();
+                            rm.startMonitoring();
                             player.generateAction(currentState);
                         }
                         latch.await();
@@ -125,9 +130,9 @@ public class GameEngine implements Subject, ResourceMonitor.ResourceMonitorListe
                         break;
                     }
                     Action nextMove = turnToPlay.getNextMove();
-                    endTime = (System.nanoTime() - startTime)/1_000_000;
+                    ResourceMonitor.Result res = rm.stopMonitoring();
 
-                    gameLogger.addMoveTime(turnToPlay, endTime);
+                    gameLogger.addMoveData(turnToPlay, nextMove.timeTaken, res);
                     currentState.updateStateWithAction(nextMove);
                     gameLogger.printAction(nextMove, controllers.get(0));
 
@@ -239,10 +244,5 @@ public class GameEngine implements Subject, ResourceMonitor.ResourceMonitorListe
     private void printBoard() {
         GameBoardModel board = currentState.getBoard();
         board.printBoard();
-    }
-
-    @Override
-    public void onAveragesReady(float avgCpuUsage, long avgRamUsageKB, int avgBatteryLevel) {
-
     }
 }
