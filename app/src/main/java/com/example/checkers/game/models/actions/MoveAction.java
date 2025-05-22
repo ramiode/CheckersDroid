@@ -43,4 +43,9 @@ public class MoveAction extends Action {
     public boolean isKingingMove(){
         return isKingingMove;
     }
+
+    @Override
+    public MoveAction clone(){
+        return (MoveAction) super.clone();
+    }
 }

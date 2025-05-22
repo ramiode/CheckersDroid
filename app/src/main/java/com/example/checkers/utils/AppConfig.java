@@ -40,27 +40,27 @@ public class AppConfig {
     public static void setDifficulty(String s){
         switch (s) {
             case EASY:
-                minimax_depth = 4;
-                mcts_budget = 1000;
-                timeSlice = 500;
+                minimax_depth = 40;
+                mcts_budget = 10000;
+                timeSlice = 100;
                 difficulty = EASY;
                 break;
             case MEDIUM:
-                minimax_depth = 6;
-                mcts_budget = 2000;
-                timeSlice = 1000;
+                minimax_depth = 40;
+                mcts_budget = 10000;
+                timeSlice = 500;
                 difficulty = MEDIUM;
                 break;
             case HARD:
-                minimax_depth = 8;
-                mcts_budget = 3000;
-                timeSlice = 2000;
+                minimax_depth = 40;
+                mcts_budget = 10000;
+                timeSlice = 1000;
                 difficulty = HARD;
                 break;
             case VERY_HARD:
                 minimax_depth = 2;
-                mcts_budget = 8000;
-                timeSlice = 4000;
+                mcts_budget = 3000;
+                timeSlice = 2000;
                 difficulty = VERY_HARD;
                 break;
         }

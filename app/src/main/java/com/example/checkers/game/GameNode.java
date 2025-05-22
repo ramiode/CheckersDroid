@@ -129,7 +129,7 @@ public class GameNode<S,A>{
             int r = random.nextInt(unexploredActions.size());
             Action a = unexploredActions.get(r);
             unexploredActions.remove(a);
-            GameNode<S, A> child = new GameNode(state.clone().updateStateWithAction(a), a, this, depth + 1);
+            GameNode<S, A> child = new GameNode(state.clone().updateStateWithAction(a.clone()), a, this, depth + 1);
             childNodes.add(child);
             return child;
         }

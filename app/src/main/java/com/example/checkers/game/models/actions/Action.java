@@ -8,9 +8,9 @@ import com.example.checkers.game.models.players.Player;
  *
  * @author Ramiar Odendaal
  */
-public abstract class Action{
+public abstract class Action implements Cloneable{
     private final Player actingPlayer;
-    private final Stone currentStone;
+    private Stone currentStone;
     public long timeTaken;
 
     /**
@@ -61,5 +61,17 @@ public abstract class Action{
 
     public void setTimeTaken(long time){
         timeTaken = time;
+    }
+
+    @Override
+    public Action clone() {
+        try {
+            Action clone = (Action) super.clone();
+            clone.currentStone = this.currentStone.clone();
+            // TODO: copy mutable state here, so the clone can't change the internals of the original
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
     }
 }

@@ -92,22 +92,22 @@ public class DataLogger {
         }
     }
 
-    public void logMatchResult(boolean isWin, boolean isPlayerOne){
+    public void logMatchResult(boolean isPlayerOne, String outcome){
 
         try {
             if(isPlayerOne){
-                bw.write(String.format(Locale.ENGLISH,"%s,%s,%f,%d,%d,%d,%f", playerOneModel, isWin ? "Win" : "Loss", playerOneCpu/playerOneMoveCount,
+                bw.write(String.format(Locale.ENGLISH,"%s,%s,%f,%d,%d,%d,%f", playerOneModel, outcome, playerOneCpu/playerOneMoveCount,
                         playerOneBattery/playerOneMoveCount, playerOneRam/playerOneMoveCount, playerOneMoveCount, getAverageTimeForPlayerOne())); //also get vitals data
                 bw.newLine();
-                if(isWin){
+                if(outcome.equals("Win")){
                     playerOneWinCount++;
                 }
             }
             else{
-                bw.write(String.format(Locale.ENGLISH,"%s,%s,%f,%d,%d,%d,%f", playerTwoModel, isWin ? "Win" : "Loss", playerTwoCpu/playerOneMoveCount,
+                bw.write(String.format(Locale.ENGLISH,"%s,%s,%f,%d,%d,%d,%f", playerTwoModel, outcome, playerTwoCpu/playerOneMoveCount,
                         playerTwoBattery/playerTwoMoveCount, playerTwoRam/playerTwoMoveCount, playerTwoMoveCount, getAverageTimeForPlayerTwo())); //also get vitals data
                 bw.newLine();
-                if(isWin){
+                if(outcome.equals("Win")){
                     playerTwoWinCount++;
                 }
             }

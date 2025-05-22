@@ -88,23 +88,23 @@ public class GameEngine implements Subject {
                     try {
                         if (currentState.isTerminal()) {
                             if (currentState.isDraw()) {
+                                gameLogger.logMatchResult(true, "Draw");
+                                gameLogger.logMatchResult(false, "Draw");
                                 gameLogger.printSystemText("Game ends in draw after no captures and no stone movement for 40 turns.\n", controllers.get(0));
                             } else {
+                                gameLogger.logMatchResult(true, currentState.getWinner().getName().equals(playerOne.getName()) ? "Win" : "Loss");
+                                gameLogger.logMatchResult(false, currentState.getWinner().getName().equals(playerTwo.getName()) ? "Win" : "Loss");
                                 gameLogger.printSystemText(String.format("Game over: %s wins.\n", currentState.getWinner().getName()), controllers.get(0));
                             }
                             if(counter > 0) {
                                 //Thread.sleep(1000);
                                 gameLogger.printSystemText("Restarting game...", controllers.get(0));
                                 //Thread.sleep(1000);
-                                gameLogger.logMatchResult(currentState.getWinner().getName().equals(playerOne.getName()), true);
-                                gameLogger.logMatchResult(currentState.getWinner().getName().equals(playerTwo.getName()), false);
                                 gameLogger.reset();
                                 restartGame();
                                 counter--;
                             }
                             else{
-                                gameLogger.logMatchResult(currentState.getWinner().getName().equals(playerOne.getName()), true);
-                                gameLogger.logMatchResult(currentState.getWinner().getName().equals(playerTwo.getName()), false);
                                 String resultPlayerOne = String.format("Average time for Player 1 with model %s: %f\n" +
                                                                  "Number of wins: %d\n\n", AppConfig.playerOneModel, gameLogger.getAverageTimeForPlayerOne(), gameLogger.getPlayerOneWinCount());
                                 String resultPlayerTwo = String.format("Average time for Player 2 with model %s: %f\n" +

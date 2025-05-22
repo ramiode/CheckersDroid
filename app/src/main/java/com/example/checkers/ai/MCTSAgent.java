@@ -40,7 +40,6 @@ public class MCTSAgent extends Agent{
         startTime = System.nanoTime();
         GameNode<GameState, Action> node = monteCarloTreeSearch(clonedState);
         //If not undone stone will remain in its updated position -- bad design
-        clonedState.updateStateWithUndoAction(node.action);
         endTime = (System.nanoTime() - startTime)/1_000_000;
         node.action.setTimeTaken(endTime);
         return node.action;
@@ -52,7 +51,7 @@ public class MCTSAgent extends Agent{
         GameNode<GameState, Action> root = new GameNode<>(state, null, null, 0);
         Thread t = new Thread(() -> {
             try {
-                Thread.sleep(timeSlice);
+                Thread.sleep(timeSlice*3);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -158,20 +157,20 @@ public class MCTSAgent extends Agent{
         GameNode<GameState, Action> currentNode = node.clone();
         int depth = 6;
         while(!currentNode.isTerminal() && depth > 0){
-            Action randomAction = getBestAction(currentNode.state, currentNode.getUnexploredActions(), currentNode.depth);
-            currentNode = currentNode.successor(currentNode.state.updateStateWithAction(randomAction), randomAction);
+            Action randomAction = currentNode.getRandomAction();
+            currentNode = currentNode.successor(currentNode.state.updateStateWithAction(randomAction.clone()), randomAction);
             depth--;
         }
         double utility = 0;
         if(currentNode.isTerminal()) {
             if (currentNode.state.isDraw()) {
-                utility = 0.5;
+                utility = 1500;
             } else {
-                utility = currentNode.state.getWinner().getName().equals(this.name) ? 1 : -1;
+                utility = currentNode.state.getWinner().getName().equals(this.name) ? 3000 : -3000;
             }
         }
         else{
-            utility = evaluate(currentNode.state, currentNode.depth)/3000f;
+            utility = evaluate(currentNode.state, currentNode.depth);
         }
         return utility;
     }
