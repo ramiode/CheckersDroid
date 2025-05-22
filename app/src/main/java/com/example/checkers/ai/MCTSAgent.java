@@ -165,14 +165,13 @@ public class MCTSAgent extends Agent{
         double utility = 0;
         if(currentNode.isTerminal()) {
             if (currentNode.state.isDraw()) {
-                utility = 1500;
+                utility = 0.5;
             } else {
-                utility = currentNode.state.getWinner().getName().equals(this.name) ? 3000 : -3000;
+                utility = currentNode.state.getWinner().getName().equals(this.name) ? 1 : -1;
             }
         }
         else{
-            double evaluation = evaluate(currentNode.state, currentNode.depth);
-            utility = evaluation;
+            utility = evaluate(currentNode.state, currentNode.depth)/3000f;
         }
         return utility;
     }

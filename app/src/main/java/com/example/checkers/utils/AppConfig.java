@@ -41,8 +41,8 @@ public class AppConfig {
         switch (s) {
             case EASY:
                 minimax_depth = 4;
-                mcts_budget = 100;
-                timeSlice = 250;
+                mcts_budget = 1000;
+                timeSlice = 500;
                 difficulty = EASY;
                 break;
             case MEDIUM:
@@ -58,9 +58,9 @@ public class AppConfig {
                 difficulty = HARD;
                 break;
             case VERY_HARD:
-                minimax_depth = 10;
-                mcts_budget = 6000;
-                timeSlice = 3000;
+                minimax_depth = 2;
+                mcts_budget = 8000;
+                timeSlice = 4000;
                 difficulty = VERY_HARD;
                 break;
         }

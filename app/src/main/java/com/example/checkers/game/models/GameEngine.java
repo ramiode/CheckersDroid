@@ -30,7 +30,7 @@ public class GameEngine implements Subject {
     private Thread gameThread;
     private ResourceMonitor rm;
     private volatile boolean isPaused;
-    private int counter = 2;
+    private int counter = 9;
     private boolean isPlayerOneRed;
     private final List<Controller> controllers;
 
